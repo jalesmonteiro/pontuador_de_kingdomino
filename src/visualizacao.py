@@ -1,0 +1,1 @@
+# Desenha grade, bboxes das coroas e placar na imagem

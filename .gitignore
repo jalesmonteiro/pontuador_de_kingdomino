@@ -1,0 +1,75 @@
+# Ambientes Virtuais
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / arquivos de cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+
+# Treinamento e Logs (YOLO, WandB, TensorBoard, etc.)
+runs/
+wandb/
+lightning_logs/
+*.log
+
+# Pesos e Modelos Grandes
+# Descomente abaixo se os arquivos .pt/.pth forem muito grandes para o Git (recomendado usar Git LFS ou download externo)
+# *.pt
+# *.pth
+# *.onnx
+# *.h5
+# *.tflite
+
+# Dados e Datasets
+# Descomente ou adicione pastas de datasets locais caso não devam ser commitadas
+# data/
+# dataset/
+# datasets/
+# *.zip
+# *.tar.gz
+
+# Ambientes e Variáveis de Configuração
+.env
+.env.local
+*.env
+
+# IDEs e Editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+

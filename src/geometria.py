@@ -1,0 +1,1 @@
+# Homografia, cálculo de grade dinâmica e fatiamento
