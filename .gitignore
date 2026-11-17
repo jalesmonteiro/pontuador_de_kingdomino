@@ -53,6 +53,8 @@ lightning_logs/
 # datasets/
 # *.zip
 # *.tar.gz
+dados/
+dataset_bruto_celulas/
 
 # Ambientes e Variáveis de Configuração
 .env
