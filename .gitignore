@@ -45,6 +45,7 @@ lightning_logs/
 # *.onnx
 # *.h5
 # *.tflite
+modelos/*.pth
 
 # Dados e Datasets
 # Descomente ou adicione pastas de datasets locais caso não devam ser commitadas
@@ -54,6 +55,7 @@ lightning_logs/
 # *.zip
 # *.tar.gz
 dados/
+dataset/
 dataset_bruto_celulas/
 datasets/
 
