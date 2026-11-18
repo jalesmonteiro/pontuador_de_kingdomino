@@ -41,21 +41,69 @@ def carregar_modelo_tabuleiro(caminho_modelo=None):
 
 def ordenar_vertices(pontos):
     """
-    Recebe 4 pontos (x, y) em qualquer ordem e retorna na sequência padrão:
-    [superior_esquerdo, superior_direito, inferior_direito, inferior_esquerdo]
+    Ordena 4 pontos distintos no sentido horário usando o ângulo polar (np.arctan2)
+    em relação ao centroide e rotaciona a lista para iniciar pelo vértice mais
+    próximo do canto superior esquerdo (argmin(x + y)).
     """
     pts = np.array(pontos, dtype=np.float32)
-    ordenados = np.zeros((4, 2), dtype=np.float32)
+    centro = np.mean(pts, axis=0)
+    angulos = np.arctan2(pts[:, 1] - centro[1], pts[:, 0] - centro[0])
+    ordem_horaria = np.argsort(angulos)
+    pts_ordenados = pts[ordem_horaria]
 
-    soma = pts.sum(axis=1)
-    ordenados[0] = pts[np.argmin(soma)]  # superior esquerdo (menor x + y)
-    ordenados[2] = pts[np.argmax(soma)]  # inferior direito (maior x + y)
+    idx_inicio = int(np.argmin(pts_ordenados[:, 0] + pts_ordenados[:, 1]))
+    return np.roll(pts_ordenados, -idx_inicio, axis=0)
 
-    diferenca = np.diff(pts, axis=1)
-    ordenados[1] = pts[np.argmin(diferenca)]  # superior direito (menor y - x)
-    ordenados[3] = pts[np.argmax(diferenca)]  # inferior esquerdo (maior y - x)
 
-    return ordenados
+def simplificar_para_quadrilatero(contorno):
+    """
+    Reduz a envoltória convexa a exatamente 4 vértices por busca binária no parâmetro
+    epsilon de cv2.approxPolyDP, com poda iterativa dos vértices de menor área triangular
+    como fallback antes de recorrer a cv2.minAreaRect.
+    """
+    envolvente = cv2.convexHull(contorno)
+    perimetro = cv2.arcLength(envolvente, True)
+
+    baixo = 0.001
+    alto = 0.20
+    melhor_aprox = None
+
+    for _ in range(30):
+        meio = (baixo + alto) / 2.0
+        aprox = cv2.approxPolyDP(envolvente, meio * perimetro, True)
+        qtd = len(aprox)
+        if qtd == 4:
+            melhor_aprox = aprox.reshape(4, 2)
+            break
+        elif qtd > 4:
+            baixo = meio
+        else:
+            alto = meio
+
+    if melhor_aprox is not None:
+        return ordenar_vertices(melhor_aprox)
+
+    pts = envolvente.reshape(-1, 2).astype(np.float32)
+    while len(pts) > 4:
+        areas = []
+        n = len(pts)
+        for i in range(n):
+            p_ant = pts[(i - 1) % n]
+            p_atual = pts[i]
+            p_prox = pts[(i + 1) % n]
+            area = 0.5 * abs(
+                (p_atual[0] - p_ant[0]) * (p_prox[1] - p_ant[1])
+                - (p_atual[1] - p_ant[1]) * (p_prox[0] - p_ant[0])
+            )
+            areas.append(area)
+        idx_remover = int(np.argmin(areas))
+        pts = np.delete(pts, idx_remover, axis=0)
+
+    if len(pts) == 4:
+        return ordenar_vertices(pts)
+
+    retangulo = cv2.minAreaRect(envolvente)
+    return ordenar_vertices(cv2.boxPoints(retangulo))
 
 
 def _intersecao_retas(reta1, reta2):
@@ -76,68 +124,131 @@ def _intersecao_retas(reta1, reta2):
     return np.array([ix, iy], dtype=np.float32)
 
 
-def extrair_vertices_contorno(contorno):
+def _agrupar_pontos_contorno_por_lado(contorno, quadrilatero_base):
     """
-    Extrai os 4 vértices ordenados do tabuleiro a partir do contorno da máscara binária:
-    calcula a envoltória convexa, aproxima o quadrilátero inicial e ajusta 4 retas (L1)
-    às bordas externas para obter os 4 cantos por interseção.
+    Amostra pontos densos ao longo do contorno real e distribui nos 4 lados do
+    quadrilátero base, ignorando 12% de margem nas extremidades de cada lado.
     """
-    envolvente = cv2.convexHull(contorno)
-    perimetro = cv2.arcLength(envolvente, True)
-    aprox = cv2.approxPolyDP(envolvente, 0.025 * perimetro, True)
-
-    if len(aprox) == 4:
-        caixa_aprox = ordenar_vertices(aprox.reshape(4, 2))
-    else:
-        retangulo = cv2.minAreaRect(envolvente)
-        caixa_aprox = ordenar_vertices(cv2.boxPoints(retangulo))
-
-    pts_envolvente = envolvente.reshape(-1, 2).astype(np.float32)
+    pts_contorno = contorno.reshape(-1, 2).astype(np.float32)
     pontos_densos = []
-    num_pts = len(pts_envolvente)
+    num_pts = len(pts_contorno)
 
     for i in range(num_pts):
-        p1 = pts_envolvente[i]
-        p2 = pts_envolvente[(i + 1) % num_pts]
+        p1 = pts_contorno[i]
+        p2 = pts_contorno[(i + 1) % num_pts]
         dist = np.linalg.norm(p2 - p1)
-        passos = max(2, int(dist / 3.0))
+        passos = max(2, int(dist / 2.5))
         for alfa in np.linspace(0, 1, passos, endpoint=False):
             pontos_densos.append(p1 * (1 - alfa) + p2 * alfa)
 
-    if len(pontos_densos) < 16:
-        return caixa_aprox
-
-    pontos_densos = np.array(pontos_densos, dtype=np.float32)
-    grupos_bordas = [[], [], [], []]
+    grupos = [[], [], [], []]
+    if not pontos_densos:
+        return [np.array(g, dtype=np.float32) for g in grupos]
 
     for pt in pontos_densos:
         distancias = []
         for lado in range(4):
-            a = caixa_aprox[lado]
-            b = caixa_aprox[(lado + 1) % 4]
+            a = quadrilatero_base[lado]
+            b = quadrilatero_base[(lado + 1) % 4]
             ab = b - a
-            comprimento = np.linalg.norm(ab)
-            if comprimento < 1e-5:
+            comp = np.linalg.norm(ab)
+            if comp < 1e-5:
                 distancias.append(1e9)
                 continue
-            proj = np.clip(np.dot(pt - a, ab) / (comprimento ** 2), 0.0, 1.0)
+            proj = np.clip(np.dot(pt - a, ab) / (comp ** 2), 0.0, 1.0)
             ponto_proj = a + proj * ab
             distancias.append(np.linalg.norm(pt - ponto_proj))
 
-        lado_mais_proximo = int(np.argmin(distancias))
-        a = caixa_aprox[lado_mais_proximo]
-        b = caixa_aprox[(lado_mais_proximo + 1) % 4]
+        lado_proximo = int(np.argmin(distancias))
+        a = quadrilatero_base[lado_proximo]
+        b = quadrilatero_base[(lado_proximo + 1) % 4]
         ab = b - a
         fracao = np.dot(pt - a, ab) / (np.linalg.norm(ab) ** 2 + 1e-6)
-        if 0.10 <= fracao <= 0.90:
-            grupos_bordas[lado_mais_proximo].append(pt)
+        if 0.12 <= fracao <= 0.88:
+            grupos[lado_proximo].append(pt)
+
+    return [np.array(g, dtype=np.float32) for g in grupos]
+
+
+def _ajustar_reta_ransac(pontos, limiar_distancia=2.5, iteracoes=150):
+    """
+    Ajusta uma reta 2D via RANSAC (semente fixa 42) e refina com cv2.fitLine (DIST_L2)
+    apenas nos inliers.
+    """
+    n = len(pontos)
+    if n < 10:
+        return None
+
+    rng = np.random.default_rng(42)
+    melhor_mascara = None
+    max_inliers = -1
+
+    for _ in range(iteracoes):
+        idx = rng.choice(n, size=2, replace=False)
+        p1, p2 = pontos[idx[0]], pontos[idx[1]]
+        vetor = p2 - p1
+        norma = np.linalg.norm(vetor)
+        if norma < 1e-4:
+            continue
+        direcao = vetor / norma
+        normal = np.array([-direcao[1], direcao[0]], dtype=np.float32)
+
+        distancias = np.abs(np.dot(pontos - p1, normal))
+        mascara_inliers = distancias <= limiar_distancia
+        qtd_inliers = int(np.sum(mascara_inliers))
+
+        if qtd_inliers > max_inliers:
+            max_inliers = qtd_inliers
+            melhor_mascara = mascara_inliers
+
+    if melhor_mascara is None or max_inliers < 6:
+        return cv2.fitLine(pontos, cv2.DIST_HUBER, 0, 0.01, 0.01)
+
+    inliers = pontos[melhor_mascara]
+    return cv2.fitLine(inliers, cv2.DIST_L2, 0, 0.01, 0.01)
+
+
+def _diferenca_angular_graus(vetor1, vetor2):
+    """
+    Calcula o menor ângulo (0 a 90 graus) entre as direções de dois vetores 2D.
+    """
+    n1 = np.linalg.norm(vetor1)
+    n2 = np.linalg.norm(vetor2)
+    if n1 < 1e-6 or n2 < 1e-6:
+        return 0.0
+    u1 = vetor1 / n1
+    u2 = vetor2 / n2
+    cosseno = float(np.clip(abs(np.dot(u1, u2)), 0.0, 1.0))
+    return float(np.degrees(np.arccos(cosseno)))
+
+
+def extrair_vertices_contorno(contorno):
+    """
+    Extrai os 4 vértices ordenados do tabuleiro ajustando cada borda do contorno real
+    via RANSAC, com trava de consistência projetiva (desvio máximo de 15 graus em relação
+    ao lado correspondente no quadrilátero base, substituindo por cv2.DIST_HUBER quando necessário).
+    """
+    quad_base = simplificar_para_quadrilatero(contorno)
+    grupos = _agrupar_pontos_contorno_por_lado(contorno, quad_base)
 
     retas = []
     for lado in range(4):
-        if len(grupos_bordas[lado]) < 10:
-            return caixa_aprox
-        pts_lado = np.array(grupos_bordas[lado], dtype=np.float32)
-        reta = cv2.fitLine(pts_lado, cv2.DIST_L1, 0, 0.01, 0.01)
+        pts_lado = grupos[lado]
+        if len(pts_lado) < 10:
+            return quad_base
+
+        reta = _ajustar_reta_ransac(pts_lado, limiar_distancia=2.5, iteracoes=150)
+        if reta is None:
+            return quad_base
+
+        dir_ransac = np.array([float(reta[0][0]), float(reta[1][0])], dtype=np.float32)
+        dir_lado_base = quad_base[(lado + 1) % 4] - quad_base[lado]
+
+        desvio_base = _diferenca_angular_graus(dir_ransac, dir_lado_base)
+
+        if desvio_base > 15.0:
+            reta = cv2.fitLine(pts_lado, cv2.DIST_HUBER, 0, 0.01, 0.01)
+
         retas.append(reta)
 
     canto_sup_esq = _intersecao_retas(retas[3], retas[0])
@@ -147,7 +258,7 @@ def extrair_vertices_contorno(contorno):
 
     cantos = [canto_sup_esq, canto_sup_dir, canto_inf_dir, canto_inf_esq]
     if any(c is None for c in cantos):
-        return caixa_aprox
+        return quad_base
 
     return ordenar_vertices(cantos)
 
@@ -262,104 +373,275 @@ def detectar_candidatos_tabuleiro(
     return reino_principal, reinos_ignorados
 
 
-def estimar_dimensao_grade(imagem_retificada, candidatos_dimensao=(5, 7)):
+def _caminho_cache_geometria(pasta_base_intermediarias, prefixo):
+    pasta_cache = os.path.join(pasta_base_intermediarias, "cache_geometria")
+    return pasta_cache, os.path.join(pasta_cache, f"{prefixo}_estado.npz")
+
+
+def _salvar_cache_geometria(pasta_base_intermediarias, prefixo, principal):
     """
-    Identifica automaticamente o número de divisões (ex: 5x5 vs 7x7) analisando
-    os picos periódicos de gradiente (vincos físicos entre as peças de dominó)
-    nos eixos horizontal e vertical da imagem já retificada.
+    Salva vértices, contorno, caixa e confiança do reino_principal em cache comprimido (.npz).
+    """
+    pasta_cache, caminho_arquivo = _caminho_cache_geometria(
+        pasta_base_intermediarias, prefixo
+    )
+    os.makedirs(pasta_cache, exist_ok=True)
+    np.savez_compressed(
+        caminho_arquivo,
+        vertices=np.asarray(principal["vertices"], dtype=np.float32),
+        contorno=np.asarray(principal["contorno"], dtype=np.int32),
+        caixa=np.asarray(principal["caixa"], dtype=np.int32),
+        confianca=np.asarray(float(principal["confianca"]), dtype=np.float32),
+    )
+
+
+def _carregar_cache_geometria(pasta_base_intermediarias, prefixo):
+    """
+    Carrega os dados intermediários do reino_principal a partir do cache, se existir.
+    """
+    _, caminho_arquivo = _caminho_cache_geometria(pasta_base_intermediarias, prefixo)
+    if not os.path.isfile(caminho_arquivo):
+        return None
+
+    with np.load(caminho_arquivo) as dados:
+        return {
+            "vertices": dados["vertices"].astype(np.float32),
+            "contorno": dados["contorno"].astype(np.int32),
+            "caixa": dados["caixa"].astype(int).tolist(),
+            "confianca": float(dados["confianca"]),
+            "rotulo": "reino_principal",
+        }
+
+
+def _calcular_perfil_vincos(imagem_retificada, eixo):
+    """
+    Combina gradiente direcional (Sobel em cinza + canal L do LAB) e fresta escura fina
+    (Black-Hat morfológico com kernel 5x1 ou 1x5), ponderando pela continuidade ao longo
+    do eixo e subtraindo a linha de base suavizada (GaussianBlur 41).
     """
     cinza = cv2.cvtColor(imagem_retificada, cv2.COLOR_BGR2GRAY)
-    suavizada = cv2.GaussianBlur(cinza, (3, 3), 0)
-    altura, largura = suavizada.shape
+    canal_l = cv2.cvtColor(imagem_retificada, cv2.COLOR_BGR2LAB)[:, :, 0]
 
-    grad_y = np.abs(cv2.Sobel(suavizada, cv2.CV_64F, 0, 1, ksize=3))
-    perfil_linhas = np.mean(grad_y, axis=1)
-    perfil_linhas = np.maximum(
-        0,
-        perfil_linhas
-        - cv2.GaussianBlur(perfil_linhas.reshape(-1, 1), (1, 51), 0).flatten(),
-    )
+    cinza_suav = cv2.GaussianBlur(cinza, (3, 3), 0)
+    l_suav = cv2.GaussianBlur(canal_l, (3, 3), 0)
 
-    grad_x = np.abs(cv2.Sobel(suavizada, cv2.CV_64F, 1, 0, ksize=3))
-    perfil_colunas = np.mean(grad_x, axis=0)
-    perfil_colunas = np.maximum(
-        0,
-        perfil_colunas
-        - cv2.GaussianBlur(perfil_colunas.reshape(1, -1), (51, 1), 0).flatten(),
-    )
+    eixo_vertical = eixo in ("y", 0, "linhas")
+    if eixo_vertical:
+        sobel_cinza = np.abs(cv2.Sobel(cinza_suav, cv2.CV_32F, 0, 1, ksize=3))
+        sobel_l = np.abs(cv2.Sobel(l_suav, cv2.CV_32F, 0, 1, ksize=3))
+        kernel_bh = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))
+    else:
+        sobel_cinza = np.abs(cv2.Sobel(cinza_suav, cv2.CV_32F, 1, 0, ksize=3))
+        sobel_l = np.abs(cv2.Sobel(l_suav, cv2.CV_32F, 1, 0, ksize=3))
+        kernel_bh = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 1))
 
-    def avaliar_divisoes(perfil, tamanho_eixo, opcoes):
-        melhor_n = opcoes[0]
-        melhor_pontuacao = -1.0
-        janela = max(3, int(tamanho_eixo * 0.012))
+    sinal_a = 0.5 * sobel_cinza + 0.5 * sobel_l
+    bh_cinza = cv2.morphologyEx(cinza_suav, cv2.MORPH_BLACKHAT, kernel_bh).astype(np.float32)
+    bh_l = cv2.morphologyEx(l_suav, cv2.MORPH_BLACKHAT, kernel_bh).astype(np.float32)
+    sinal_b = 0.5 * bh_cinza + 0.5 * bh_l
+
+    escala_a = float(np.percentile(sinal_a, 95)) + 1e-6
+    escala_b = float(np.percentile(sinal_b, 95)) + 1e-6
+    mapa_2d = 0.55 * (sinal_a / escala_a) + 0.45 * (sinal_b / escala_b)
+
+    if not eixo_vertical:
+        mapa_2d = mapa_2d.T
+
+    comprimento_eixo, largura_transversal = mapa_2d.shape
+    num_fatias = min(20, max(4, largura_transversal // 20))
+    limites_fatias = np.linspace(0, largura_transversal, num_fatias + 1, dtype=int)
+
+    medias_fatias = np.zeros((comprimento_eixo, num_fatias), dtype=np.float32)
+    for idx in range(num_fatias):
+        ini = limites_fatias[idx]
+        fim = limites_fatias[idx + 1]
+        if fim > ini:
+            medias_fatias[:, idx] = np.mean(mapa_2d[:, ini:fim], axis=1)
+
+    mediana_local = float(np.median(medias_fatias))
+    ordenadas = np.sort(medias_fatias, axis=1)
+    corte_apara = max(1, int(num_fatias * 0.15))
+    if num_fatias - 2 * corte_apara >= 1:
+        media_aparada = np.mean(ordenadas[:, corte_apara:-corte_apara], axis=1)
+    else:
+        media_aparada = np.mean(ordenadas, axis=1)
+
+    taxa_continuidade = np.mean(medias_fatias > mediana_local, axis=1)
+    perfil_bruto = (media_aparada * taxa_continuidade).astype(np.float32)
+
+    tendencia = cv2.GaussianBlur(perfil_bruto.reshape(-1, 1), (1, 41), 0).flatten()
+    return np.maximum(0.0, perfil_bruto - tendencia)
+
+
+def estimar_dimensao_grade(imagem_retificada, candidatos_dimensao=(5, 6, 7)):
+    """
+    Avalia pares (linhas, colunas) usando o perfil combinado de vincos físicos.
+    Pares quadrados (n, n) recebem soma direta das pontuações normalizadas; pares
+    retangulares (lin != col) só vencem se superarem o melhor par quadrado em >= 18%.
+    """
+    altura, largura = imagem_retificada.shape[:2]
+    perfil_y = _calcular_perfil_vincos(imagem_retificada, "y")
+    perfil_x = _calcular_perfil_vincos(imagem_retificada, "x")
+
+    def pontuar_candidatos(perfil, tamanho_eixo, opcoes):
+        janela_pico = max(3, int(tamanho_eixo * 0.030))
+        janela_vale = max(3, int(tamanho_eixo * 0.025))
+        pontuacoes = {}
 
         for n in opcoes:
             passo = tamanho_eixo / n
-            soma_picos = 0.0
+            proeminencias = []
+
             for k in range(1, n):
-                pos = int(round(k * passo))
-                inicio = max(0, pos - janela)
-                fim = min(tamanho_eixo, pos + janela + 1)
-                soma_picos += float(np.max(perfil[inicio:fim]))
+                pos_pico = int(round(k * passo))
+                ini_p = max(0, pos_pico - janela_pico)
+                fim_p = min(tamanho_eixo, pos_pico + janela_pico + 1)
+                pico = float(np.max(perfil[ini_p:fim_p]))
 
-            media_por_linha = soma_picos / (n - 1)
-            if media_por_linha > melhor_pontuacao:
-                melhor_pontuacao = media_por_linha
-                melhor_n = n
-
-        return melhor_n
-
-    linhas_detectadas = avaliar_divisoes(perfil_linhas, altura, candidatos_dimensao)
-    colunas_detectadas = avaliar_divisoes(perfil_colunas, largura, candidatos_dimensao)
-
-    if linhas_detectadas != colunas_detectadas:
-        melhor_combinado = candidatos_dimensao[0]
-        melhor_score_comb = -1.0
-        janela_y = max(3, int(altura * 0.012))
-        janela_x = max(3, int(largura * 0.012))
-
-        for n in candidatos_dimensao:
-            score_y = np.mean([
-                np.max(
-                    perfil_linhas[
-                        max(0, int(round(k * (altura / n))) - janela_y):min(
-                            altura, int(round(k * (altura / n))) + janela_y + 1
-                        )
-                    ]
+                pos_vale_esq = int(round((k - 0.5) * passo))
+                pos_vale_dir = int(round((k + 0.5) * passo))
+                vale_esq = float(
+                    np.mean(
+                        perfil[
+                            max(0, pos_vale_esq - janela_vale):min(
+                                tamanho_eixo, pos_vale_esq + janela_vale + 1
+                            )
+                        ]
+                    )
                 )
-                for k in range(1, n)
-            ])
-            score_x = np.mean([
-                np.max(
-                    perfil_colunas[
-                        max(0, int(round(k * (largura / n))) - janela_x):min(
-                            largura, int(round(k * (largura / n))) + janela_x + 1
-                        )
-                    ]
+                vale_dir = float(
+                    np.mean(
+                        perfil[
+                            max(0, pos_vale_dir - janela_vale):min(
+                                tamanho_eixo, pos_vale_dir + janela_vale + 1
+                            )
+                        ]
+                    )
                 )
-                for k in range(1, n)
-            ])
-            if (score_y + score_x) > melhor_score_comb:
-                melhor_score_comb = score_y + score_x
-                melhor_combinado = n
+                proeminencias.append(max(0.0, pico - 0.5 * (vale_esq + vale_dir)))
 
-        return melhor_combinado, melhor_combinado
+            pontuacoes[n] = float(np.median(proeminencias)) if proeminencias else 0.0
 
-    return linhas_detectadas, colunas_detectadas
+        maximo = max(pontuacoes.values()) if pontuacoes else 0.0
+        if maximo > 0:
+            for n in opcoes:
+                pontuacoes[n] /= maximo
+        return pontuacoes
+
+    pontuacao_y = pontuar_candidatos(perfil_y, altura, candidatos_dimensao)
+    pontuacao_x = pontuar_candidatos(perfil_x, largura, candidatos_dimensao)
+
+    melhor_quadrado = max(
+        candidatos_dimensao, key=lambda n: pontuacao_y[n] + pontuacao_x[n]
+    )
+    soma_quadrado = pontuacao_y[melhor_quadrado] + pontuacao_x[melhor_quadrado]
+
+    pares_retangulares = [
+        (lin, col)
+        for lin in candidatos_dimensao
+        for col in candidatos_dimensao
+        if lin != col
+    ]
+    if pares_retangulares:
+        melhor_retangular = max(
+            pares_retangulares,
+            key=lambda par: pontuacao_y[par[0]] + pontuacao_x[par[1]],
+        )
+        soma_retangular = (
+            pontuacao_y[melhor_retangular[0]] + pontuacao_x[melhor_retangular[1]]
+        )
+        if soma_retangular > soma_quadrado * 1.18:
+            return melhor_retangular
+
+    return melhor_quadrado, melhor_quadrado
+
+
+def calcular_linhas_corte_ajustadas(imagem_retificada, linhas, colunas):
+    """
+    Ajusta as posições das linhas de corte diretamente aos vincos físicos reais
+    dentro de uma janela de +-5% ao redor de cada posição teórica, exigindo pico
+    >= 1.35x a média da janela; caso contrário interpola entre cortes confirmados.
+    """
+    altura, largura = imagem_retificada.shape[:2]
+    perfil_y = _calcular_perfil_vincos(imagem_retificada, "y")
+    perfil_x = _calcular_perfil_vincos(imagem_retificada, "x")
+
+    def ajustar_eixo(perfil, tamanho_eixo, divisoes):
+        if divisoes <= 1:
+            return [0, tamanho_eixo]
+
+        passo = tamanho_eixo / divisoes
+        janela = max(5, int(round(tamanho_eixo * 0.05)))
+
+        posicoes = [None] * (divisoes + 1)
+        posicoes[0] = 0.0
+        posicoes[divisoes] = float(tamanho_eixo)
+
+        for k in range(1, divisoes):
+            pos_teorica = k * passo
+            inicio = max(1, int(round(pos_teorica - janela)))
+            fim = min(tamanho_eixo - 1, int(round(pos_teorica + janela)) + 1)
+
+            if fim <= inicio:
+                continue
+
+            trecho = perfil[inicio:fim]
+            media_janela = float(np.mean(trecho))
+            pos_pico = inicio + int(np.argmax(trecho))
+            valor_pico = float(perfil[pos_pico])
+
+            if valor_pico > 0 and valor_pico >= 1.35 * media_janela:
+                posicoes[k] = float(pos_pico)
+
+        indices_validos = [i for i, v in enumerate(posicoes) if v is not None]
+        for idx in range(len(indices_validos) - 1):
+            i_esq = indices_validos[idx]
+            i_dir = indices_validos[idx + 1]
+            if i_dir - i_esq > 1:
+                v_esq = posicoes[i_esq]
+                v_dir = posicoes[i_dir]
+                for k in range(i_esq + 1, i_dir):
+                    fracao = (k - i_esq) / (i_dir - i_esq)
+                    posicoes[k] = v_esq + fracao * (v_dir - v_esq)
+
+        espacamento_minimo = max(10.0, passo * 0.45)
+        for k in range(1, divisoes):
+            limite_inf = posicoes[k - 1] + espacamento_minimo
+            limite_sup = float(tamanho_eixo) - (divisoes - k) * espacamento_minimo
+            if limite_inf <= limite_sup:
+                posicoes[k] = min(max(posicoes[k], limite_inf), limite_sup)
+            else:
+                posicoes[k] = k * passo
+
+        cortes = [int(round(v)) for v in posicoes]
+        cortes[0] = 0
+        cortes[-1] = tamanho_eixo
+        return cortes
+
+    cortes_y = ajustar_eixo(perfil_y, altura, linhas)
+    cortes_x = ajustar_eixo(perfil_x, largura, colunas)
+    return cortes_y, cortes_x
 
 
 def aplicar_homografia(imagem, vertices_origem, tamanho_saida=1000):
     """
-    Aplica transformação de perspectiva (cv2.warpPerspective) para gerar
-    uma imagem quadrada e retificada do tabuleiro em visão superior.
+    Aplica transformação de perspectiva (cv2.warpPerspective) para gerar uma imagem
+    retificada do tabuleiro em visão superior. Aceita tamanho_saida inteiro ou (largura, altura).
     """
+    if isinstance(tamanho_saida, (tuple, list)):
+        largura_saida = int(tamanho_saida[0])
+        altura_saida = int(tamanho_saida[1])
+    else:
+        largura_saida = int(tamanho_saida)
+        altura_saida = int(tamanho_saida)
+
     origem = ordenar_vertices(vertices_origem)
     destino = np.array(
         [
             [0, 0],
-            [tamanho_saida - 1, 0],
-            [tamanho_saida - 1, tamanho_saida - 1],
-            [0, tamanho_saida - 1],
+            [largura_saida - 1, 0],
+            [largura_saida - 1, altura_saida - 1],
+            [0, altura_saida - 1],
         ],
         dtype=np.float32,
     )
@@ -368,29 +650,39 @@ def aplicar_homografia(imagem, vertices_origem, tamanho_saida=1000):
     imagem_retificada = cv2.warpPerspective(
         imagem,
         matriz_h,
-        (tamanho_saida, tamanho_saida),
+        (largura_saida, altura_saida),
         flags=cv2.INTER_CUBIC,
     )
 
     return imagem_retificada, matriz_h
 
 
-def fatiar_grade(imagem_retificada, linhas=5, colunas=5, margem_interna=0):
+def fatiar_grade(
+    imagem_retificada,
+    linhas=5,
+    colunas=5,
+    margem_interna=0,
+    cortes_y=None,
+    cortes_x=None,
+):
     """
-    Divide a imagem top-down em uma matriz de recortes (linhas x colunas).
+    Divide a imagem top-down em uma matriz de recortes (linhas x colunas)
+    usando as linhas de corte ajustadas aos vincos físicos.
     """
     altura, largura = imagem_retificada.shape[:2]
-    passo_y = altura / linhas
-    passo_x = largura / colunas
+    if cortes_y is None or cortes_x is None:
+        cortes_y, cortes_x = calcular_linhas_corte_ajustadas(
+            imagem_retificada, linhas, colunas
+        )
 
     celulas = []
     for r in range(linhas):
         linha_celulas = []
         for c in range(colunas):
-            y1 = int(round(r * passo_y)) + margem_interna
-            y2 = int(round((r + 1) * passo_y)) - margem_interna
-            x1 = int(round(c * passo_x)) + margem_interna
-            x2 = int(round((c + 1) * passo_x)) - margem_interna
+            y1 = int(cortes_y[r]) + margem_interna
+            y2 = int(cortes_y[r + 1]) - margem_interna
+            x1 = int(cortes_x[c]) + margem_interna
+            x2 = int(cortes_x[c + 1]) - margem_interna
 
             recorte = imagem_retificada[
                 max(0, y1):min(altura, y2), max(0, x1):min(largura, x2)
@@ -528,35 +820,39 @@ def desenhar_grade_verificacao(
     linhas=5,
     colunas=5,
     margem_interna=0,
+    cortes_y=None,
+    cortes_x=None,
     cor_grade=(255, 255, 0),
     cor_corte=(0, 255, 0),
 ):
     """
-    Desenha as divisões da grade e, se margem_interna > 0, destaca a área exata de corte de cada célula.
+    Desenha as divisões ajustadas da grade e, se margem_interna > 0, destaca a área exata de corte de cada célula.
     """
     copia = imagem_retificada.copy()
     altura, largura = copia.shape[:2]
-    passo_y = altura / linhas
-    passo_x = largura / colunas
 
-    for r in range(1, linhas):
-        y = int(round(r * passo_y))
-        cv2.line(copia, (0, y), (largura, y), cor_grade, 2)
+    if cortes_y is None or cortes_x is None:
+        cortes_y, cortes_x = calcular_linhas_corte_ajustadas(
+            imagem_retificada, linhas, colunas
+        )
 
-    for c in range(1, colunas):
-        x = int(round(c * passo_x))
-        cv2.line(copia, (x, 0), (x, altura), cor_grade, 2)
+    for y in cortes_y[1:-1]:
+        cv2.line(copia, (0, int(y)), (largura, int(y)), cor_grade, 2)
+
+    for x in cortes_x[1:-1]:
+        cv2.line(copia, (int(x), 0), (int(x), altura), cor_grade, 2)
 
     cv2.rectangle(copia, (0, 0), (largura - 1, altura - 1), cor_grade, 3)
 
     if margem_interna > 0:
         for r in range(linhas):
             for c in range(colunas):
-                y1 = int(round(r * passo_y)) + margem_interna
-                y2 = int(round((r + 1) * passo_y)) - margem_interna
-                x1 = int(round(c * passo_x)) + margem_interna
-                x2 = int(round((c + 1) * passo_x)) - margem_interna
-                cv2.rectangle(copia, (x1, y1), (x2, y2), cor_corte, 1)
+                y1 = int(cortes_y[r]) + margem_interna
+                y2 = int(cortes_y[r + 1]) - margem_interna
+                x1 = int(cortes_x[c]) + margem_interna
+                x2 = int(cortes_x[c + 1]) - margem_interna
+                if y2 > y1 and x2 > x1:
+                    cv2.rectangle(copia, (x1, y1), (x2, y2), cor_corte, 1)
 
     return copia
 
@@ -568,9 +864,13 @@ def exportar_celulas_para_dataset(
     linhas=5,
     colunas=5,
     margem_interna=4,
+    proporcao_maxima_preto=0.15,
+    cortes_y=None,
+    cortes_x=None,
 ):
     """
-    Salva cada quadrado recortado em disco para montagem do dataset de classificação.
+    Salva cada quadrado recortado em disco para montagem do dataset de classificação,
+    ignorando células em que mais de 15% dos pixels sejam preto puro ([0, 0, 0]).
     """
     os.makedirs(pasta_saida, exist_ok=True)
     matriz_celulas = fatiar_grade(
@@ -578,14 +878,28 @@ def exportar_celulas_para_dataset(
         linhas=linhas,
         colunas=colunas,
         margem_interna=margem_interna,
+        cortes_y=cortes_y,
+        cortes_x=cortes_x,
     )
 
     caminhos_salvos = []
     for r in range(linhas):
         for c in range(colunas):
+            recorte = matriz_celulas[r][c]
+            if recorte.size == 0:
+                continue
+
+            if recorte.ndim == 3:
+                mascara_preto_puro = np.all(recorte == 0, axis=2)
+            else:
+                mascara_preto_puro = recorte == 0
+
+            if float(np.mean(mascara_preto_puro)) > proporcao_maxima_preto:
+                continue
+
             nome_arquivo = f"{prefixo_arquivo}_L{r}_C{c}.jpg"
             caminho_completo = os.path.join(pasta_saida, nome_arquivo)
-            cv2.imwrite(caminho_completo, matriz_celulas[r][c])
+            cv2.imwrite(caminho_completo, recorte)
             caminhos_salvos.append(caminho_completo)
 
     return caminhos_salvos
@@ -602,16 +916,22 @@ def processar_imagem_automatica(
     tamanho_saida=None,
     margem_interna=4,
     salvar_celulas=True,
+    etapa_minima=0,
     etapa_maxima=4,
 ):
     """
-    Executa a etapa geométrica até o estágio definido em etapa_maxima:
-    0 -> apenas seleção de reinos (reino_principal vs reino_ignorado)
-    1 -> até detecção dos 4 cantos e homografia preliminar em memória
-    2 -> até salvamento da homografia (visão top-down)
-    3 -> até desenho da grade interna e áreas de corte
-    4 -> fluxo completo (inclui recorte e salvamento das células para o dataset)
+    Executa a etapa geométrica no intervalo [etapa_minima, etapa_maxima] com cache em disco:
+    0 -> detecção RF-DETR e seleção de reinos (reino_principal vs reino_ignorado)
+    1 -> extração/recalculo dos 4 cantos a partir do contorno
+    2 -> estimativa de grade (5, 6, 7) e homografia final (visão top-down)
+    3 -> ajuste fino pelos vincos físicos e desenho da grade de corte
+    4 -> recorte e salvamento das células válidas para o dataset
     """
+    if etapa_minima > etapa_maxima:
+        raise ValueError(
+            f"etapa_minima ({etapa_minima}) não pode ser maior que etapa_maxima ({etapa_maxima})."
+        )
+
     imagem = cv2.imread(caminho_imagem)
     if imagem is None:
         raise FileNotFoundError(f"Não foi possível abrir a imagem: {caminho_imagem}")
@@ -620,22 +940,36 @@ def processar_imagem_automatica(
     prefixo, _ = os.path.splitext(nome_arquivo)
 
     arquivos_gerados = {}
+    principal = None
+    ignorados = []
+    usou_cache = False
 
-    # Etapa 0: detecção automática por segmentação (RF-DETR) e seleção de reinos
-    principal, ignorados = detectar_candidatos_tabuleiro(
-        imagem,
-        caminho_modelo=caminho_modelo,
-        limiar_confianca=limiar_confianca,
-    )
+    if etapa_minima > 0:
+        principal = _carregar_cache_geometria(pasta_base_intermediarias, prefixo)
+        usou_cache = principal is not None
+
+    # Etapa 0: detecção RF-DETR (executada se etapa_minima <= 0 ou cache ausente)
     if principal is None:
-        raise ValueError(f"Nenhum tabuleiro detectado automaticamente em: {caminho_imagem}")
+        principal, ignorados = detectar_candidatos_tabuleiro(
+            imagem,
+            caminho_modelo=caminho_modelo,
+            limiar_confianca=limiar_confianca,
+        )
+        if principal is None:
+            raise ValueError(
+                f"Nenhum tabuleiro detectado automaticamente em: {caminho_imagem}"
+            )
+        _salvar_cache_geometria(pasta_base_intermediarias, prefixo, principal)
 
-    pasta_etapa0 = os.path.join(pasta_base_intermediarias, "00_selecao_reinos")
-    os.makedirs(pasta_etapa0, exist_ok=True)
-    img_selecao = desenhar_selecao_reinos(imagem, principal, ignorados)
-    caminho_etapa0 = os.path.join(pasta_etapa0, f"{prefixo}_00_selecao_reinos.jpg")
-    cv2.imwrite(caminho_etapa0, img_selecao)
-    arquivos_gerados["selecao_reinos"] = caminho_etapa0
+        if etapa_minima <= 0:
+            pasta_etapa0 = os.path.join(pasta_base_intermediarias, "00_selecao_reinos")
+            os.makedirs(pasta_etapa0, exist_ok=True)
+            img_selecao = desenhar_selecao_reinos(imagem, principal, ignorados)
+            caminho_etapa0 = os.path.join(
+                pasta_etapa0, f"{prefixo}_00_selecao_reinos.jpg"
+            )
+            cv2.imwrite(caminho_etapa0, img_selecao)
+            arquivos_gerados["selecao_reinos"] = caminho_etapa0
 
     if etapa_maxima <= 0:
         return {
@@ -646,23 +980,28 @@ def processar_imagem_automatica(
             "arquivos_gerados": arquivos_gerados,
         }
 
-    # Etapa 1: extração dos 4 cantos no reino principal e aplicação da homografia
-    pasta_etapa1 = os.path.join(pasta_base_intermediarias, "01_cantos")
-    os.makedirs(pasta_etapa1, exist_ok=True)
-    vertices = principal["vertices"]
-    img_cantos = desenhar_cantos_detectados(
-        imagem, vertices, contorno=principal.get("contorno")
-    )
-    caminho_etapa1 = os.path.join(pasta_etapa1, f"{prefixo}_01_cantos.jpg")
-    cv2.imwrite(caminho_etapa1, img_cantos)
-    arquivos_gerados["cantos"] = caminho_etapa1
+    # Etapa 1: recalcula vértices se etapa_minima == 1 (cache) ou veio da Etapa 0
+    if etapa_minima == 1 and usou_cache:
+        principal["vertices"] = extrair_vertices_contorno(principal["contorno"])
+        _salvar_cache_geometria(pasta_base_intermediarias, prefixo, principal)
 
-    tamanho_preliminar = tamanho_saida if tamanho_saida is not None else 980
-    img_preliminar, matriz_preliminar = aplicar_homografia(
-        imagem, vertices, tamanho_saida=tamanho_preliminar
-    )
+    vertices = principal["vertices"]
+
+    if etapa_minima <= 1:
+        pasta_etapa1 = os.path.join(pasta_base_intermediarias, "01_cantos")
+        os.makedirs(pasta_etapa1, exist_ok=True)
+        img_cantos = desenhar_cantos_detectados(
+            imagem, vertices, contorno=principal.get("contorno")
+        )
+        caminho_etapa1 = os.path.join(pasta_etapa1, f"{prefixo}_01_cantos.jpg")
+        cv2.imwrite(caminho_etapa1, img_cantos)
+        arquivos_gerados["cantos"] = caminho_etapa1
 
     if etapa_maxima <= 1:
+        tamanho_preliminar = tamanho_saida if tamanho_saida is not None else 980
+        img_preliminar, matriz_preliminar = aplicar_homografia(
+            imagem, vertices, tamanho_saida=tamanho_preliminar
+        )
         return {
             "prefixo": prefixo,
             "pasta_intermediaria": pasta_base_intermediarias,
@@ -673,23 +1012,55 @@ def processar_imagem_automatica(
             "arquivos_gerados": arquivos_gerados,
         }
 
-    if linhas is None or colunas is None:
-        lin_est, col_est = estimar_dimensao_grade(img_preliminar, candidatos_dimensao=(5, 7))
-        linhas = linhas if linhas is not None else lin_est
-        colunas = colunas if colunas is not None else col_est
-
-    if tamanho_saida is None:
-        tamanho_saida = 980 if max(linhas, colunas) == 7 else 1000
-
-    # Etapa 2: homografia final na resolução exata da grade
-    pasta_etapa2 = os.path.join(pasta_base_intermediarias, "02_homografia")
-    os.makedirs(pasta_etapa2, exist_ok=True)
-    img_homografia, matriz_h = aplicar_homografia(
-        imagem, vertices, tamanho_saida=tamanho_saida
+    # Etapa 2: estimativa de grade (5, 6, 7) e homografia final
+    caminho_etapa2 = os.path.join(
+        pasta_base_intermediarias, "02_homografia", f"{prefixo}_02_homografia.jpg"
     )
-    caminho_etapa2 = os.path.join(pasta_etapa2, f"{prefixo}_02_homografia.jpg")
-    cv2.imwrite(caminho_etapa2, img_homografia)
-    arquivos_gerados["homografia"] = caminho_etapa2
+    img_homografia = None
+    matriz_h = None
+
+    if etapa_minima >= 3 and os.path.isfile(caminho_etapa2):
+        img_disco = cv2.imread(caminho_etapa2)
+        if img_disco is not None:
+            if linhas is None or colunas is None:
+                lin_est, col_est = estimar_dimensao_grade(
+                    img_disco, candidatos_dimensao=(5, 6, 7)
+                )
+                linhas = linhas if linhas is not None else lin_est
+                colunas = colunas if colunas is not None else col_est
+
+            larg_esp, alt_esp = (
+                (tamanho_saida, tamanho_saida)
+                if isinstance(tamanho_saida, int)
+                else (
+                    tamanho_saida
+                    if tamanho_saida is not None
+                    else (colunas * 200, linhas * 200)
+                )
+            )
+            if img_disco.shape[1] == larg_esp and img_disco.shape[0] == alt_esp:
+                img_homografia = img_disco
+                arquivos_gerados["homografia"] = caminho_etapa2
+
+    if img_homografia is None:
+        if linhas is None or colunas is None:
+            img_preliminar, _ = aplicar_homografia(imagem, vertices, tamanho_saida=980)
+            lin_est, col_est = estimar_dimensao_grade(
+                img_preliminar, candidatos_dimensao=(5, 6, 7)
+            )
+            linhas = linhas if linhas is not None else lin_est
+            colunas = colunas if colunas is not None else col_est
+
+        if tamanho_saida is None:
+            tamanho_saida = (colunas * 200, linhas * 200)
+
+        pasta_etapa2 = os.path.join(pasta_base_intermediarias, "02_homografia")
+        os.makedirs(pasta_etapa2, exist_ok=True)
+        img_homografia, matriz_h = aplicar_homografia(
+            imagem, vertices, tamanho_saida=tamanho_saida
+        )
+        cv2.imwrite(caminho_etapa2, img_homografia)
+        arquivos_gerados["homografia"] = caminho_etapa2
 
     if etapa_maxima <= 2:
         return {
@@ -703,18 +1074,26 @@ def processar_imagem_automatica(
             "arquivos_gerados": arquivos_gerados,
         }
 
-    # Etapa 3: grade onde serão realizados os cortes
-    pasta_etapa3 = os.path.join(pasta_base_intermediarias, "03_grade_cortes")
-    os.makedirs(pasta_etapa3, exist_ok=True)
-    img_grade = desenhar_grade_verificacao(
-        img_homografia,
-        linhas=linhas,
-        colunas=colunas,
-        margem_interna=margem_interna,
+    # Etapa 3: ajuste fino das linhas pelos vincos físicos e desenho da grade de corte
+    cortes_y, cortes_x = calcular_linhas_corte_ajustadas(
+        img_homografia, linhas, colunas
     )
-    caminho_etapa3 = os.path.join(pasta_etapa3, f"{prefixo}_03_grade_cortes.jpg")
-    cv2.imwrite(caminho_etapa3, img_grade)
-    arquivos_gerados["grade_cortes"] = caminho_etapa3
+    if etapa_minima <= 3:
+        pasta_etapa3 = os.path.join(pasta_base_intermediarias, "03_grade_cortes")
+        os.makedirs(pasta_etapa3, exist_ok=True)
+        img_grade = desenhar_grade_verificacao(
+            img_homografia,
+            linhas=linhas,
+            colunas=colunas,
+            margem_interna=margem_interna,
+            cortes_y=cortes_y,
+            cortes_x=cortes_x,
+        )
+        caminho_etapa3 = os.path.join(
+            pasta_etapa3, f"{prefixo}_03_grade_cortes.jpg"
+        )
+        cv2.imwrite(caminho_etapa3, img_grade)
+        arquivos_gerados["grade_cortes"] = caminho_etapa3
 
     if etapa_maxima <= 3 or not salvar_celulas:
         arquivos_gerados["celulas"] = []
@@ -737,6 +1116,8 @@ def processar_imagem_automatica(
         linhas=linhas,
         colunas=colunas,
         margem_interna=margem_interna,
+        cortes_y=cortes_y,
+        cortes_x=cortes_x,
     )
     arquivos_gerados["celulas"] = caminhos_celulas
 
