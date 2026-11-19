@@ -373,6 +373,9 @@ def detectar_candidatos_tabuleiro(
     return reino_principal, reinos_ignorados
 
 
+detectar_reinos = detectar_candidatos_tabuleiro
+
+
 def _caminho_cache_geometria(pasta_base_intermediarias, prefixo):
     pasta_cache = os.path.join(pasta_base_intermediarias, "cache_geometria")
     return pasta_cache, os.path.join(pasta_cache, f"{prefixo}_estado.npz")

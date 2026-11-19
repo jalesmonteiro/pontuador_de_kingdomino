@@ -359,6 +359,7 @@ def treinar_modelo(
         contagem_coroas[int(item["coroas"])] += 1
 
     pesos_terreno = calcular_pesos_balanceados(contagem_terrenos, dispositivo)
+    pesos_terreno[mapa_terreno_para_idx["vazio"]] *= 1.5
     pesos_coroas = calcular_pesos_balanceados(contagem_coroas, dispositivo)
 
     criterio_terreno = nn.CrossEntropyLoss(weight=pesos_terreno)
