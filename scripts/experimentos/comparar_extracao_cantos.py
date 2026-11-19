@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 
 # Adiciona a raiz do projeto ao caminho de busca para importar 'src'
-raiz_projeto = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+raiz_projeto = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if raiz_projeto not in sys.path:
     sys.path.insert(0, raiz_projeto)
 

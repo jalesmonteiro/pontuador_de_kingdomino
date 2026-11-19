@@ -39,26 +39,22 @@ lightning_logs/
 mlruns/
 *.log
 
-# Pesos e Modelos Grandes
-# Descomente abaixo se os arquivos .pt/.pth forem muito grandes para o Git (recomendado usar Git LFS ou download externo)
-# *.pt
-# *.pth
-# *.onnx
-# *.h5
-# *.tflite
+# Pesos de Modelos Treinados (mantém a pasta modelos/ via .gitkeep)
 modelos/*.pth
+modelos/*.pt
+modelos/*.onnx
+!modelos/.gitkeep
 
-# Dados e Datasets
-# Descomente ou adicione pastas de datasets locais caso não devam ser commitadas
-# data/
-# dataset/
-# datasets/
-# *.zip
-# *.tar.gz
-dados/
+# Dados Brutos, Recortes e Imagens Intermediárias
+# Mantém versionados dados/rotulos_tabuleiros.json e dados/dataset_celulas/rotulos_celulas.csv
+dados/fotos_brutas/
+dados/celulas_recortadas/
+dados/intermediarias/
+dados/tabuleiro_coco/
 dataset/
-dataset_bruto_celulas/
 datasets/
+dataset_bruto_celulas/
+intermediarias/
 
 # Ambientes e Variáveis de Configuração
 .env
@@ -78,4 +74,3 @@ datasets/
 Thumbs.db
 ehthumbs.db
 [Dd]esktop.ini
-

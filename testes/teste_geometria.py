@@ -20,8 +20,8 @@ def testar_foto_unica(caminho_foto, linhas=7, colunas=7):
 
     resultado = processar_imagem_automatica(
         caminho_imagem=caminho_foto,
-        pasta_base_intermediarias=os.path.join(raiz_projeto, "intermediarias"),
-        pasta_dataset_celulas=os.path.join(raiz_projeto, "dataset_bruto_celulas"),
+        pasta_base_intermediarias=os.path.join(raiz_projeto, "dados", "intermediarias"),
+        pasta_dataset_celulas=os.path.join(raiz_projeto, "dados", "celulas_recortadas"),
     )
     print(f"Grade detectada automaticamente: {resultado['dimensao_grade']}")
 
@@ -68,7 +68,7 @@ def testar_lote_pasta(pasta_fotos, linhas=5, colunas=5):
 
 if __name__ == "__main__":
     # 1. Teste individual na sua foto 7x7 de referência
-    caminho_exemplo = os.path.join(raiz_projeto, "exemplos_teste", "teste1.jpg")
+    caminho_exemplo = os.path.join(raiz_projeto, "testes", "amostras", "teste1.jpg")
     testar_foto_unica(caminho_exemplo, linhas=7, colunas=7)
 
     # 2. Para processar todas as fotos de partidas 5x5 de uma vez, descomente abaixo:
