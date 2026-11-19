@@ -32,10 +32,11 @@ wheels/
 .ipynb_checkpoints/
 *-checkpoint.ipynb
 
-# Treinamento e Logs (YOLO, WandB, TensorBoard, etc.)
+# Treinamento e Logs (YOLO, WandB, TensorBoard, MLflow, etc.)
 runs/
 wandb/
 lightning_logs/
+mlruns/
 *.log
 
 # Pesos e Modelos Grandes

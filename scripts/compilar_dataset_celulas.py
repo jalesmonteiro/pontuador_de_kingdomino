@@ -76,6 +76,8 @@ def compilar_dataset_celulas(
     registros = []
     distribuicao_terrenos = {}
     distribuicao_coroas = {0: 0, 1: 0, 2: 0, 3: 0}
+    distribuicao_combinada = {}
+    tabuleiros_com_celulas = set()
     total_descartadas_x = 0
     total_ausentes_disco = 0
 
@@ -108,8 +110,12 @@ def compilar_dataset_celulas(
                     classe_combinada,
                 ])
 
+                tabuleiros_com_celulas.add(prefixo)
                 distribuicao_terrenos[terreno] = distribuicao_terrenos.get(terreno, 0) + 1
                 distribuicao_coroas[coroas] = distribuicao_coroas.get(coroas, 0) + 1
+                distribuicao_combinada[classe_combinada] = (
+                    distribuicao_combinada.get(classe_combinada, 0) + 1
+                )
 
     with open(caminho_csv_saida, "w", encoding="utf-8", newline="") as arquivo_csv:
         escritor = csv.writer(arquivo_csv)
@@ -127,17 +133,20 @@ def compilar_dataset_celulas(
 
     resumo = {
         "total_tabuleiros_rotulados": len(rotulos_tabuleiros),
+        "total_tabuleiros_unicos_validos": len(tabuleiros_com_celulas),
         "total_celulas_validas": len(registros),
         "descartadas_x": total_descartadas_x,
         "ausentes_disco": total_ausentes_disco,
         "distribuicao_terrenos": distribuicao_terrenos,
         "distribuicao_coroas": distribuicao_coroas,
+        "distribuicao_combinada": distribuicao_combinada,
         "caminho_csv": caminho_csv_saida,
     }
 
     print("\n" + "=" * 60)
     print("COMPILAÇÃO DO DATASET DE CÉLULAS")
     print(f"Tabuleiros rotulados no JSON: {resumo['total_tabuleiros_rotulados']}")
+    print(f"Tabuleiros únicos com células válidas: {resumo['total_tabuleiros_unicos_validos']}")
     print(f"Células válidas exportadas: {resumo['total_celulas_validas']}")
     print(f"Células descartadas (x): {resumo['descartadas_x']}")
     print(f"Células ausentes em disco (filtradas por borda): {resumo['ausentes_disco']}")
@@ -147,6 +156,9 @@ def compilar_dataset_celulas(
     print("\nDistribuição por coroas:")
     for qtd_coroas in sorted(distribuicao_coroas.keys()):
         print(f"  - {qtd_coroas} coroa(s): {distribuicao_coroas[qtd_coroas]}")
+    print("\nDistribuição por classe_combinada:")
+    for classe, qtd in sorted(distribuicao_combinada.items()):
+        print(f"  - {classe}: {qtd}")
     print(f"\nCSV salvo em: {caminho_csv_saida}")
     print("=" * 60)
 

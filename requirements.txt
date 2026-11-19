@@ -7,3 +7,5 @@ roboflow
 supervision
 fastapi
 uvicorn
+scikit-learn
+mlflow-skinny
