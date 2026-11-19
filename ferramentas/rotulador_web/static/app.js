@@ -1,10 +1,14 @@
 const estadoAplicacao = {
+  abaAtiva: "rotulagem",
   tabuleiros: [],
   filtroStatus: "todos",
   prefixoSelecionado: null,
   total: 0,
   rotulados: 0,
   ultimaEntradaFocada: null,
+  celulasInspecao: [],
+  celulaEmEdicao: null,
+  inspecaoCarregada: false,
 };
 
 const CODIGOS_COM_COROA = new Set(["f", "d", "o", "g", "p", "m"]);
@@ -33,6 +37,39 @@ const CLASSES_TERRENO = [
   "terreno-x",
 ];
 
+const OPCOES_CODIGOS_RAPIDOS = [
+  { codigo: "f", rotulo: "f (Floresta 0👑)", letra: "f" },
+  { codigo: "f1", rotulo: "f1 (Floresta 1👑)", letra: "f" },
+  { codigo: "f2", rotulo: "f2 (Floresta 2👑)", letra: "f" },
+  { codigo: "f3", rotulo: "f3 (Floresta 3👑)", letra: "f" },
+  { codigo: "d", rotulo: "d (Deserto 0👑)", letra: "d" },
+  { codigo: "d1", rotulo: "d1 (Deserto 1👑)", letra: "d" },
+  { codigo: "d2", rotulo: "d2 (Deserto 2👑)", letra: "d" },
+  { codigo: "d3", rotulo: "d3 (Deserto 3👑)", letra: "d" },
+  { codigo: "o", rotulo: "o (Oceano 0👑)", letra: "o" },
+  { codigo: "o1", rotulo: "o1 (Oceano 1👑)", letra: "o" },
+  { codigo: "o2", rotulo: "o2 (Oceano 2👑)", letra: "o" },
+  { codigo: "o3", rotulo: "o3 (Oceano 3👑)", letra: "o" },
+  { codigo: "g", rotulo: "g (Planície 0👑)", letra: "g" },
+  { codigo: "g1", rotulo: "g1 (Planície 1👑)", letra: "g" },
+  { codigo: "g2", rotulo: "g2 (Planície 2👑)", letra: "g" },
+  { codigo: "g3", rotulo: "g3 (Planície 3👑)", letra: "g" },
+  { codigo: "p", rotulo: "p (Pântano 0👑)", letra: "p" },
+  { codigo: "p1", rotulo: "p1 (Pântano 1👑)", letra: "p" },
+  { codigo: "p2", rotulo: "p2 (Pântano 2👑)", letra: "p" },
+  { codigo: "p3", rotulo: "p3 (Pântano 3👑)", letra: "p" },
+  { codigo: "m", rotulo: "m (Mineração 0👑)", letra: "m" },
+  { codigo: "m1", rotulo: "m1 (Mineração 1👑)", letra: "m" },
+  { codigo: "m2", rotulo: "m2 (Mineração 2👑)", letra: "m" },
+  { codigo: "m3", rotulo: "m3 (Mineração 3👑)", letra: "m" },
+  { codigo: "c", rotulo: "c (Castelo)", letra: "c" },
+  { codigo: "v", rotulo: "v (Vazio)", letra: "v" },
+  { codigo: "x", rotulo: "x (Descartar)", letra: "x" },
+];
+
+const ORDEM_LAYOUT_NUMERICO = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "0", "enter"];
+const ORDEM_LAYOUT_CONVENCIONAL = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "enter"];
+
 function mostrarToast(mensagem, tipo = "sucesso", duracaoMs = 3500) {
   const recipiente = document.getElementById("recipiente-toasts");
   const toast = document.createElement("div");
@@ -43,6 +80,20 @@ function mostrarToast(mensagem, tipo = "sucesso", duracaoMs = 3500) {
   setTimeout(() => {
     toast.remove();
   }, duracaoMs);
+}
+
+function alternarAbaPrincipal(nomeAba) {
+  estadoAplicacao.abaAtiva = nomeAba;
+  const ehAjustes = nomeAba === "ajustes";
+
+  document.getElementById("visao-rotulagem").classList.toggle("oculto", ehAjustes);
+  document.getElementById("visao-ajustes").classList.toggle("oculto", !ehAjustes);
+  document.getElementById("botao-aba-rotulagem").classList.toggle("ativo", !ehAjustes);
+  document.getElementById("botao-aba-ajustes").classList.toggle("ativo", ehAjustes);
+
+  if (ehAjustes && !estadoAplicacao.inspecaoCarregada) {
+    carregarInspecaoClasses();
+  }
 }
 
 function interpretarCodigoCelula(valorBruto) {
@@ -100,9 +151,6 @@ function atualizarVisualCelula(elementoCelula, elementoBadge, valorDigitado) {
   }
   return true;
 }
-
-const ORDEM_LAYOUT_NUMERICO = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "0", "enter"];
-const ORDEM_LAYOUT_CONVENCIONAL = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "enter"];
 
 function alternarLayoutTeclado(layout) {
   const grade = document.getElementById("grade-atalhos-teclado");
@@ -294,7 +342,6 @@ function tratarTeclaCelula(evento, entrada, celula, badge, linha, coluna, tabule
   const digito = extrairDigitoTeclado(evento);
   const valorAtual = entrada.value.trim().toLowerCase();
 
-  // Digitação direta de letra válida: c, v, x avançam imediatamente; terrenos entram no Estado B
   if (LETRAS_VALIDAS.has(teclaMinuscula)) {
     evento.preventDefault();
     entrada.value = teclaMinuscula;
@@ -306,11 +353,9 @@ function tratarTeclaCelula(evento, entrada, celula, badge, linha, coluna, tabule
     return;
   }
 
-  // Digitação numérica: Estado A (tipo) vs Estado B (coroas)
   if (digito !== null) {
     evento.preventDefault();
 
-    // Estado A: célula vazia -> atalhos numéricos de tipo ativos
     if (valorAtual === "") {
       if (digito === "2") {
         return;
@@ -327,7 +372,6 @@ function tratarTeclaCelula(evento, entrada, celula, badge, linha, coluna, tabule
       return;
     }
 
-    // Estado B: célula com 1 letra -> atalhos de tipo desativados; 1/2/3 anexa coroas e avança
     if (
       valorAtual.length === 1 &&
       CODIGOS_COM_COROA.has(valorAtual) &&
@@ -342,13 +386,45 @@ function tratarTeclaCelula(evento, entrada, celula, badge, linha, coluna, tabule
     return;
   }
 
-  // Bloqueia teclas de caractere avulsas inválidas
   if (evento.key && evento.key.length === 1) {
     evento.preventDefault();
   }
 }
 
-function renderizarTabuleiroAtual() {
+function atualizarBotoesNavegacaoImagem() {
+  const btnAnt = document.getElementById("botao-imagem-anterior");
+  const btnProx = document.getElementById("botao-imagem-proxima");
+  if (!btnAnt || !btnProx) return;
+
+  const filtrados = obterTabuleirosFiltrados();
+  const idx = filtrados.findIndex(
+    (item) => item.prefixo === estadoAplicacao.prefixoSelecionado
+  );
+
+  btnAnt.disabled = idx <= 0;
+  btnProx.disabled = idx === -1 || idx >= filtrados.length - 1;
+}
+
+function navegarTabuleiro(deslocamento) {
+  const filtrados = obterTabuleirosFiltrados();
+  if (filtrados.length === 0) return;
+
+  const idxAtual = filtrados.findIndex(
+    (item) => item.prefixo === estadoAplicacao.prefixoSelecionado
+  );
+  const novoIdx = idxAtual + deslocamento;
+  if (novoIdx < 0 || novoIdx >= filtrados.length) return;
+
+  estadoAplicacao.prefixoSelecionado = filtrados[novoIdx].prefixo;
+  const seletor = document.getElementById("seletor-tabuleiro");
+  if (seletor) {
+    seletor.value = estadoAplicacao.prefixoSelecionado;
+  }
+  renderizarTabuleiroAtual();
+}
+
+function renderizarTabuleiroAtual(focoCoords = null) {
+  atualizarBotoesNavegacaoImagem();
   const tabuleiro = obterTabuleiroAtual();
   const titulo = document.getElementById("nome-tabuleiro-atual");
   const etiquetaDimensao = document.getElementById("etiqueta-dimensao");
@@ -440,13 +516,15 @@ function renderizarTabuleiroAtual() {
     areaTexto.value = "";
   }
 
-  const primeiraEntrada = recipienteGrade.querySelector(
-    '.entrada-celula[data-linha="0"][data-coluna="0"]'
+  const linhaAlvo = focoCoords ? focoCoords.linha : 0;
+  const colAlvo = focoCoords ? focoCoords.coluna : 0;
+  const entradaFoco = recipienteGrade.querySelector(
+    `.entrada-celula[data-linha="${linhaAlvo}"][data-coluna="${colAlvo}"]`
   );
-  if (primeiraEntrada) {
-    primeiraEntrada.focus();
-    primeiraEntrada.select();
-    atualizarIndicadorModoTeclado(primeiraEntrada);
+  if (entradaFoco) {
+    entradaFoco.focus();
+    entradaFoco.select();
+    atualizarIndicadorModoTeclado(entradaFoco);
   }
 }
 
@@ -618,6 +696,7 @@ async function salvarEAvancar() {
     tabuleiro.matriz = matriz;
     estadoAplicacao.rotulados = dados.rotulados;
     estadoAplicacao.total = dados.total;
+    estadoAplicacao.inspecaoCarregada = false;
 
     atualizarBarraProgresso();
     mostrarToast(`Tabuleiro '${tabuleiro.prefixo}' salvo!`, "sucesso");
@@ -632,8 +711,10 @@ async function salvarEAvancar() {
 }
 
 async function compilarDataset() {
-  const botaoCompilar = document.getElementById("botao-compilar-dataset");
-  botaoCompilar.disabled = true;
+  const btn1 = document.getElementById("botao-compilar-dataset");
+  const btn2 = document.getElementById("botao-compilar-ajustes");
+  if (btn1) btn1.disabled = true;
+  if (btn2) btn2.disabled = true;
 
   try {
     const resposta = await fetch("/api/compilar", { method: "POST" });
@@ -653,8 +734,278 @@ async function compilarDataset() {
   } catch (erro) {
     mostrarToast("Erro ao acionar compilação do dataset.", "erro");
   } finally {
-    botaoCompilar.disabled = false;
+    if (btn1) btn1.disabled = false;
+    if (btn2) btn2.disabled = false;
   }
+}
+
+/* ==================== ABA 2: AJUSTES (INSPEÇÃO POR CLASSE) ==================== */
+
+function atualizarContadoresAlertasInspecao() {
+  const todas = estadoAplicacao.celulasInspecao;
+  let foraRegra = 0;
+  let divergencias = 0;
+
+  todas.forEach((cel) => {
+    const alertas = cel.alertas || [];
+    if (alertas.includes("fora_regra_padrao")) foraRegra += 1;
+    if (alertas.includes("divergencia_modelo")) divergencias += 1;
+  });
+
+  document.getElementById("contagem-fora-regra").textContent = String(foraRegra);
+  document.getElementById("contagem-divergencias").textContent = String(divergencias);
+
+  const badgeAba = document.getElementById("contador-alertas-aba");
+  const totalAlertas = foraRegra + divergencias;
+  if (totalAlertas > 0) {
+    badgeAba.textContent = String(totalAlertas);
+    badgeAba.classList.remove("oculto");
+  } else {
+    badgeAba.classList.add("oculto");
+  }
+}
+
+async function carregarInspecaoClasses() {
+  const recipiente = document.getElementById("recipiente-secoes-classes");
+  recipiente.innerHTML = "<p class='mensagem-vazia'>Carregando células e analisando divergências...</p>";
+
+  try {
+    const resposta = await fetch("/api/inspecao-classes");
+    const dados = await resposta.json();
+    estadoAplicacao.celulasInspecao = dados.celulas || [];
+    estadoAplicacao.inspecaoCarregada = true;
+
+    atualizarContadoresAlertasInspecao();
+    renderizarSecoesAjustes();
+  } catch (erro) {
+    recipiente.innerHTML = "<p class='mensagem-vazia'>Erro ao carregar inspeção de classes.</p>";
+    mostrarToast("Falha ao carregar dados de inspeção.", "erro");
+  }
+}
+
+function renderizarSecoesAjustes() {
+  const recipiente = document.getElementById("recipiente-secoes-classes");
+  const filtroTerreno = document.getElementById("filtro-ajustes-terreno").value;
+  const filtroCoroas = document.getElementById("filtro-ajustes-coroas").value;
+  const apenasForaRegra = document.getElementById("check-apenas-fora-regra").checked;
+  const apenasDivergencias = document.getElementById("check-apenas-divergencias").checked;
+
+  const filtradas = estadoAplicacao.celulasInspecao.filter((cel) => {
+    if (filtroTerreno !== "todos" && cel.terreno !== filtroTerreno) return false;
+    if (filtroCoroas !== "todas" && String(cel.coroas) !== filtroCoroas) return false;
+    const alertas = cel.alertas || [];
+    if (apenasForaRegra && !alertas.includes("fora_regra_padrao")) return false;
+    if (apenasDivergencias && !alertas.includes("divergencia_modelo")) return false;
+    return true;
+  });
+
+  document.getElementById("resumo-total-ajustes").textContent = `${filtradas.length} células exibidas`;
+  recipiente.innerHTML = "";
+
+  if (filtradas.length === 0) {
+    recipiente.innerHTML = "<p class='mensagem-vazia'>Nenhuma célula encontrada para os filtros selecionados.</p>";
+    return;
+  }
+
+  const grupos = new Map();
+  filtradas.forEach((cel) => {
+    const chave = cel.classe_combinada;
+    if (!grupos.has(chave)) grupos.set(chave, []);
+    grupos.get(chave).push(cel);
+  });
+
+  const chavesOrdenadas = Array.from(grupos.keys()).sort();
+
+  chavesOrdenadas.forEach((classeComb) => {
+    const lista = grupos.get(classeComb);
+    const letraTerreno = lista[0].codigo[0];
+
+    const detalhes = document.createElement("details");
+    detalhes.className = "secao-classe";
+    detalhes.open = true;
+
+    const sumario = document.createElement("summary");
+    sumario.innerHTML = `
+      <div class="cabecalho-secao-info">
+        <span class="badge-codigo-card terreno-${letraTerreno}">${classeComb}</span>
+        <span>${lista.length} amostra(s)</span>
+      </div>
+      <span class="subtitulo">Clique em um card para corrigir</span>
+    `;
+    detalhes.appendChild(sumario);
+
+    const grade = document.createElement("div");
+    grade.className = "grade-cards-celulas";
+
+    lista.forEach((cel) => {
+      const card = document.createElement("div");
+      card.className = "card-celula-inspecao";
+      const alertas = cel.alertas || [];
+      if (alertas.includes("divergencia_modelo")) {
+        card.classList.add("alerta-divergencia");
+      } else if (alertas.includes("fora_regra_padrao")) {
+        card.classList.add("alerta-fora-regra");
+      }
+
+      const img = document.createElement("img");
+      img.className = "miniatura-celula";
+      img.loading = "lazy";
+      img.src = cel.url_recorte;
+      img.alt = `${cel.prefixo} (${cel.linha},${cel.coluna})`;
+
+      const meta = document.createElement("div");
+      meta.className = "meta-card-celula";
+      const textoCoroa = cel.coroas > 0 ? ` ${cel.coroas}👑` : "";
+      meta.innerHTML = `
+        <span class="nome-tabuleiro-card" title="${cel.prefixo}">${cel.prefixo} (${cel.linha},${cel.coluna})</span>
+        <span class="badge-codigo-card terreno-${cel.codigo[0]}">${cel.codigo}${textoCoroa}</span>
+      `;
+
+      card.appendChild(img);
+      card.appendChild(meta);
+
+      if (alertas.length > 0) {
+        const blocoAlertas = document.createElement("div");
+        blocoAlertas.className = "badges-alerta-card";
+
+        if (alertas.includes("fora_regra_padrao")) {
+          const b1 = document.createElement("div");
+          b1.className = "badge-alerta-item badge-fora-regra";
+          b1.textContent = "Fora da regra padrão";
+          blocoAlertas.appendChild(b1);
+        }
+
+        if (alertas.includes("divergencia_modelo") && cel.predicao_modelo) {
+          const b2 = document.createElement("div");
+          b2.className = "badge-alerta-item badge-divergencia";
+          const pct = Math.round((cel.confianca_modelo || 0) * 100);
+          b2.textContent = `IA: ${cel.predicao_modelo.codigo} (${pct}%)`;
+          blocoAlertas.appendChild(b2);
+        }
+
+        card.appendChild(blocoAlertas);
+      }
+
+      card.addEventListener("click", () => abrirModalEdicaoCelula(cel));
+      grade.appendChild(card);
+    });
+
+    detalhes.appendChild(grade);
+    recipiente.appendChild(detalhes);
+  });
+}
+
+function abrirModalEdicaoCelula(celula) {
+  estadoAplicacao.celulaEmEdicao = celula;
+  const modal = document.getElementById("modal-edicao-celula");
+
+  document.getElementById("modal-titulo-celula").textContent =
+    `${celula.prefixo} — Célula (${celula.linha}, ${celula.coluna})`;
+  document.getElementById("modal-subtitulo-celula").textContent =
+    `Classe atual: ${celula.classe_combinada}`;
+  document.getElementById("modal-imagem-celula").src = celula.url_recorte;
+
+  const badgeAtual = document.getElementById("modal-rotulo-atual");
+  badgeAtual.textContent = celula.codigo;
+  badgeAtual.className = `badge-codigo-card terreno-${celula.codigo[0]}`;
+
+  const blocoSug = document.getElementById("modal-bloco-sugestao");
+  if (celula.predicao_modelo) {
+    const pct = Math.round((celula.confianca_modelo || 0) * 100);
+    document.getElementById("modal-texto-sugestao").textContent =
+      `${celula.predicao_modelo.codigo} (${celula.predicao_modelo.classe_combinada} — ${pct}%)`;
+    blocoSug.classList.remove("oculto");
+  } else {
+    blocoSug.classList.add("oculto");
+  }
+
+  const gradeBotoes = document.getElementById("grade-botoes-rapidos-modal");
+  gradeBotoes.innerHTML = "";
+  OPCOES_CODIGOS_RAPIDOS.forEach((op) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `botao-codigo-rapido terreno-${op.letra}`;
+    btn.textContent = op.rotulo;
+    btn.addEventListener("click", () => aplicarNovoCodigoCelulaModal(op.codigo));
+    gradeBotoes.appendChild(btn);
+  });
+
+  modal.classList.remove("oculto");
+}
+
+function fecharModalEdicaoCelula() {
+  estadoAplicacao.celulaEmEdicao = null;
+  document.getElementById("modal-edicao-celula").classList.add("oculto");
+}
+
+async function aplicarNovoCodigoCelulaModal(novoCodigo) {
+  const cel = estadoAplicacao.celulaEmEdicao;
+  if (!cel) return;
+
+  try {
+    const resposta = await fetch("/api/celulas/atualizar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prefixo: cel.prefixo,
+        linha: cel.linha,
+        coluna: cel.coluna,
+        novo_codigo: novoCodigo,
+      }),
+    });
+
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+      mostrarToast(dados.detail || "Erro ao atualizar célula.", "erro");
+      return;
+    }
+
+    // Atualiza na memória da Aba 1
+    const tab = estadoAplicacao.tabuleiros.find((t) => t.prefixo === cel.prefixo);
+    if (tab && tab.matriz && tab.matriz[cel.linha]) {
+      tab.matriz[cel.linha][cel.coluna] = novoCodigo;
+    }
+
+    // Atualiza na memória da Aba 2
+    const idx = estadoAplicacao.celulasInspecao.findIndex(
+      (item) =>
+        item.prefixo === cel.prefixo &&
+        item.linha === cel.linha &&
+        item.coluna === cel.coluna
+    );
+    if (dados.descartada) {
+      if (idx !== -1) estadoAplicacao.celulasInspecao.splice(idx, 1);
+    } else if (idx !== -1 && dados.celula) {
+      estadoAplicacao.celulasInspecao[idx] = dados.celula;
+    }
+
+    atualizarContadoresAlertasInspecao();
+    renderizarSecoesAjustes();
+    if (estadoAplicacao.prefixoSelecionado === cel.prefixo) {
+      renderizarTabuleiroAtual();
+    }
+
+    fecharModalEdicaoCelula();
+    mostrarToast(dados.mensagem, "sucesso");
+  } catch (erro) {
+    mostrarToast("Falha de comunicação ao atualizar célula.", "erro");
+  }
+}
+
+function abrirTabuleiroDaCelulaNaRotulagem() {
+  const cel = estadoAplicacao.celulaEmEdicao;
+  if (!cel) return;
+
+  const { prefixo, linha, coluna } = cel;
+  fecharModalEdicaoCelula();
+
+  estadoAplicacao.filtroStatus = "todos";
+  document.getElementById("filtro-status").value = "todos";
+  estadoAplicacao.prefixoSelecionado = prefixo;
+
+  alternarAbaPrincipal("rotulagem");
+  preencherSeletorTabuleiros();
+  renderizarTabuleiroAtual({ linha, coluna });
 }
 
 async function carregarTabuleiros() {
@@ -684,6 +1035,14 @@ async function carregarTabuleiros() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  document
+    .getElementById("botao-aba-rotulagem")
+    .addEventListener("click", () => alternarAbaPrincipal("rotulagem"));
+
+  document
+    .getElementById("botao-aba-ajustes")
+    .addEventListener("click", () => alternarAbaPrincipal("ajustes"));
+
   document.getElementById("filtro-status").addEventListener("change", (evento) => {
     estadoAplicacao.filtroStatus = evento.target.value;
     preencherSeletorTabuleiros();
@@ -693,6 +1052,14 @@ document.addEventListener("DOMContentLoaded", () => {
     estadoAplicacao.prefixoSelecionado = evento.target.value;
     renderizarTabuleiroAtual();
   });
+
+  document
+    .getElementById("botao-imagem-anterior")
+    .addEventListener("click", () => navegarTabuleiro(-1));
+
+  document
+    .getElementById("botao-imagem-proxima")
+    .addEventListener("click", () => navegarTabuleiro(1));
 
   document
     .getElementById("botao-aplicar-texto")
@@ -709,6 +1076,53 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("botao-compilar-dataset")
     .addEventListener("click", compilarDataset);
+
+  document
+    .getElementById("botao-compilar-ajustes")
+    .addEventListener("click", compilarDataset);
+
+  document
+    .getElementById("botao-recarregar-ajustes")
+    .addEventListener("click", carregarInspecaoClasses);
+
+  document
+    .getElementById("filtro-ajustes-terreno")
+    .addEventListener("change", renderizarSecoesAjustes);
+
+  document
+    .getElementById("filtro-ajustes-coroas")
+    .addEventListener("change", renderizarSecoesAjustes);
+
+  document
+    .getElementById("check-apenas-fora-regra")
+    .addEventListener("change", renderizarSecoesAjustes);
+
+  document
+    .getElementById("check-apenas-divergencias")
+    .addEventListener("change", renderizarSecoesAjustes);
+
+  document
+    .getElementById("botao-fechar-modal")
+    .addEventListener("click", fecharModalEdicaoCelula);
+
+  document.getElementById("modal-edicao-celula").addEventListener("click", (evento) => {
+    if (evento.target.id === "modal-edicao-celula") {
+      fecharModalEdicaoCelula();
+    }
+  });
+
+  document
+    .getElementById("botao-aceitar-sugestao")
+    .addEventListener("click", () => {
+      const cel = estadoAplicacao.celulaEmEdicao;
+      if (cel && cel.predicao_modelo) {
+        aplicarNovoCodigoCelulaModal(cel.predicao_modelo.codigo);
+      }
+    });
+
+  document
+    .getElementById("botao-abrir-tabuleiro-rotulagem")
+    .addEventListener("click", abrirTabuleiroDaCelulaNaRotulagem);
 
   document
     .getElementById("botao-layout-numerico")
@@ -765,4 +1179,5 @@ document.addEventListener("DOMContentLoaded", () => {
   } catch (_) {}
 
   carregarTabuleiros();
+  carregarInspecaoClasses();
 });

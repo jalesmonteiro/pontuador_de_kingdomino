@@ -4,6 +4,8 @@ import re
 import sys
 
 import cv2
+import torch
+from PIL import Image
 from fastapi import Body, FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,8 +15,13 @@ if raiz_projeto not in sys.path:
     sys.path.insert(0, raiz_projeto)
 
 from scripts.compilar_dataset_celulas import (
+    MAPA_TERRENOS,
     compilar_dataset_celulas,
     interpretar_codigo_celula,
+)
+from src.classificador import (
+    CAMINHO_CLASSIFICADOR_PADRAO,
+    carregar_classificador_celulas,
 )
 
 PASTA_ESTATICOS = os.path.join(os.path.dirname(__file__), "static")
@@ -32,9 +39,13 @@ os.makedirs(PASTA_CELULAS, exist_ok=True)
 PADRAO_ARQUIVO_CELULA = re.compile(r"^(.+)_L(\d+)_C(\d+)\.jpg$", re.IGNORECASE)
 SUFIXO_GRADE = "_03_grade_cortes.jpg"
 
+MAPA_INVERSO_TERRENOS = {valor: chave for chave, valor in MAPA_TERRENOS.items()}
+_CACHE_PREDICOES_CELULAS = {}
+
 app = FastAPI(title="Rotulador Visual de Tabuleiros - Kingdomino")
 app.mount("/static", StaticFiles(directory=PASTA_ESTATICOS), name="estaticos")
 app.mount("/imagens/grades", StaticFiles(directory=PASTA_GRADES), name="imagens_grades")
+app.mount("/imagens/celulas", StaticFiles(directory=PASTA_CELULAS), name="imagens_celulas")
 
 
 def _carregar_rotulos():
@@ -74,7 +85,6 @@ def _indexar_dimensoes_por_celulas():
 
 
 def _inferir_dimensao_tabuleiro(prefixo, indice_celulas):
-    # 1. Tenta inferir diretamente a partir da imagem de homografia ou grade (múltiplo de 200px)
     for pasta, sufixo in (
         (PASTA_HOMOGRAFIAS, "_02_homografia.jpg"),
         (PASTA_GRADES, SUFIXO_GRADE),
@@ -87,11 +97,9 @@ def _inferir_dimensao_tabuleiro(prefixo, indice_celulas):
                 if altura % 200 == 0 and largura % 200 == 0:
                     return max(1, altura // 200), max(1, largura // 200)
 
-    # 2. Caso contrário, usa o índice máximo de L e C das células recortadas
     if prefixo in indice_celulas:
         return indice_celulas[prefixo]
 
-    # 3. Fallback padrão 5x5
     return 5, 5
 
 
@@ -100,6 +108,100 @@ def _converter_linhas_para_matriz(linhas_texto):
     for linha in linhas_texto:
         matriz.append([item.strip().lower() for item in str(linha).split(",")])
     return matriz
+
+
+def _eh_fora_regra_padrao(codigo_norm, coroas):
+    if not codigo_norm:
+        return False
+    letra = codigo_norm[0]
+    if letra in ("d", "f", "o") and coroas in (2, 3):
+        return True
+    if letra in ("g", "p") and coroas == 3:
+        return True
+    return False
+
+
+def _codigo_a_partir_de_terreno_coroas(terreno, coroas):
+    letra = MAPA_INVERSO_TERRENOS.get(terreno, "v")
+    if letra in ("c", "v") or int(coroas) <= 0:
+        return letra
+    return f"{letra}{int(coroas)}"
+
+
+def _obter_predicoes_modelo(nomes_arquivos):
+    if not os.path.isfile(CAMINHO_CLASSIFICADOR_PADRAO):
+        return {}, False
+
+    try:
+        artefato = carregar_classificador_celulas(CAMINHO_CLASSIFICADOR_PADRAO)
+    except Exception:
+        return {}, False
+
+    mtime_modelo = os.path.getmtime(CAMINHO_CLASSIFICADOR_PADRAO)
+    rede = artefato["modelo"]
+    disp = artefato["dispositivo"]
+    classes_terreno = artefato["classes_terreno"]
+    classes_coroas = artefato["classes_coroas"]
+    transformacao = artefato["transformacao"]
+
+    pendentes = []
+    resultados = {}
+
+    for nome_arq in nomes_arquivos:
+        caminho_img = os.path.join(PASTA_CELULAS, nome_arq)
+        if not os.path.isfile(caminho_img):
+            continue
+        chave = (nome_arq, round(os.path.getmtime(caminho_img), 2), round(mtime_modelo, 2))
+        if chave in _CACHE_PREDICOES_CELULAS:
+            resultados[nome_arq] = _CACHE_PREDICOES_CELULAS[chave]
+        else:
+            pendentes.append((nome_arq, caminho_img, chave))
+
+    tamanho_lote = 128
+    for inicio in range(0, len(pendentes), tamanho_lote):
+        fatia = pendentes[inicio : inicio + tamanho_lote]
+        tensores = []
+        metadados_fatia = []
+
+        for nome_arq, caminho_img, chave in fatia:
+            try:
+                with Image.open(caminho_img) as img:
+                    tensores.append(transformacao(img.convert("RGB")))
+                    metadados_fatia.append((nome_arq, chave))
+            except Exception:
+                continue
+
+        if not tensores:
+            continue
+
+        lote = torch.stack(tensores, dim=0).to(disp)
+        with torch.no_grad():
+            logits_t, logits_c = rede(lote)
+            probs_t = torch.softmax(logits_t, dim=1)
+            probs_c = torch.softmax(logits_c, dim=1)
+            conf_t, idx_t = torch.max(probs_t, dim=1)
+            conf_c, idx_c = torch.max(probs_c, dim=1)
+
+        for i, (nome_arq, chave) in enumerate(metadados_fatia):
+            terreno_pred = str(classes_terreno[int(idx_t[i].item())])
+            coroa_pred = int(classes_coroas[int(idx_c[i].item())])
+            if terreno_pred in ("castelo", "vazio"):
+                coroa_pred = 0
+                confianca = float(conf_t[i].item())
+            else:
+                confianca = float(min(conf_t[i].item(), conf_c[i].item()))
+
+            pred = {
+                "codigo": _codigo_a_partir_de_terreno_coroas(terreno_pred, coroa_pred),
+                "terreno": terreno_pred,
+                "coroas": coroa_pred,
+                "classe_combinada": f"{terreno_pred}_{coroa_pred}",
+                "confianca": round(confianca, 3),
+            }
+            _CACHE_PREDICOES_CELULAS[chave] = pred
+            resultados[nome_arq] = pred
+
+    return resultados, True
 
 
 @app.get("/")
@@ -222,6 +324,176 @@ def salvar_rotulos_tabuleiro(prefixo, dados=Body(...)):
         "linhas_texto": linhas_normalizadas,
         "rotulados": total_rotulados,
         "total": len(arquivos_grades),
+    }
+
+
+@app.get("/api/inspecao-classes")
+def inspecionar_classes_celulas():
+    rotulos = _carregar_rotulos()
+    celulas_brutas = []
+    nomes_arquivos = []
+
+    for prefixo in sorted(rotulos.keys()):
+        linhas_texto = rotulos[prefixo]
+        if not isinstance(linhas_texto, list):
+            continue
+        for r, linha_str in enumerate(linhas_texto):
+            codigos = [c.strip() for c in str(linha_str).split(",")]
+            for c, cod_bruto in enumerate(codigos):
+                try:
+                    codigo_norm, terreno, coroas = interpretar_codigo_celula(cod_bruto)
+                except ValueError:
+                    continue
+
+                if codigo_norm == "x":
+                    continue
+
+                nome_arquivo = f"{prefixo}_L{r}_C{c}.jpg"
+                caminho_img = os.path.join(PASTA_CELULAS, nome_arquivo)
+                if not os.path.isfile(caminho_img):
+                    continue
+
+                nomes_arquivos.append(nome_arquivo)
+                celulas_brutas.append({
+                    "arquivo": nome_arquivo,
+                    "prefixo": prefixo,
+                    "linha": r,
+                    "coluna": c,
+                    "codigo": codigo_norm,
+                    "terreno": terreno,
+                    "coroas": coroas,
+                    "classe_combinada": f"{terreno}_{coroas}",
+                    "url_recorte": f"/imagens/celulas/{nome_arquivo}",
+                })
+
+    mapa_predicoes, modelo_disponivel = _obter_predicoes_modelo(nomes_arquivos)
+
+    total_fora_regra = 0
+    total_divergencias = 0
+
+    for item in celulas_brutas:
+        alertas = []
+        if _eh_fora_regra_padrao(item["codigo"], item["coroas"]):
+            alertas.append("fora_regra_padrao")
+            total_fora_regra += 1
+
+        pred = mapa_predicoes.get(item["arquivo"])
+        item["predicao_modelo"] = None
+        item["confianca_modelo"] = None
+
+        if pred is not None:
+            if pred["codigo"] != item["codigo"] and pred["confianca"] >= 0.80:
+                alertas.append("divergencia_modelo")
+                item["predicao_modelo"] = pred
+                item["confianca_modelo"] = pred["confianca"]
+                total_divergencias += 1
+
+        item["alertas"] = alertas
+
+    return {
+        "celulas": celulas_brutas,
+        "total_celulas": len(celulas_brutas),
+        "total_fora_regra": total_fora_regra,
+        "total_divergencias": total_divergencias,
+        "modelo_disponivel": modelo_disponivel,
+    }
+
+
+@app.post("/api/celulas/atualizar")
+def atualizar_celula_individual(dados=Body(...)):
+    prefixo = str(dados.get("prefixo", "")).strip()
+    linha = dados.get("linha")
+    coluna = dados.get("coluna")
+    novo_codigo_bruto = dados.get("novo_codigo", "")
+
+    if not prefixo or linha is None or coluna is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Parâmetros 'prefixo', 'linha', 'coluna' e 'novo_codigo' são obrigatórios.",
+        )
+
+    linha = int(linha)
+    coluna = int(coluna)
+
+    try:
+        codigo_norm, terreno, coroas = interpretar_codigo_celula(novo_codigo_bruto)
+    except ValueError as erro:
+        raise HTTPException(status_code=400, detail=str(erro))
+
+    rotulos = _carregar_rotulos()
+    if prefixo not in rotulos or not isinstance(rotulos[prefixo], list):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Tabuleiro '{prefixo}' não encontrado em rotulos_tabuleiros.json.",
+        )
+
+    linhas_texto = rotulos[prefixo]
+    if linha < 0 or linha >= len(linhas_texto):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Linha {linha} fora dos limites do tabuleiro '{prefixo}'.",
+        )
+
+    celulas_linha = [c.strip().lower() for c in str(linhas_texto[linha]).split(",")]
+    if coluna < 0 or coluna >= len(celulas_linha):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Coluna {coluna} fora dos limites do tabuleiro '{prefixo}'.",
+        )
+
+    codigo_anterior = celulas_linha[coluna]
+    celulas_linha[coluna] = codigo_norm
+    linhas_texto[linha] = ", ".join(celulas_linha)
+    rotulos[prefixo] = linhas_texto
+    _salvar_rotulos(rotulos)
+
+    if codigo_norm == "x":
+        return {
+            "mensagem": f"Célula ({linha}, {coluna}) de '{prefixo}' marcada como descartada (x).",
+            "prefixo": prefixo,
+            "linha": linha,
+            "coluna": coluna,
+            "codigo_anterior": codigo_anterior,
+            "descartada": True,
+            "celula": None,
+        }
+
+    nome_arquivo = f"{prefixo}_L{linha}_C{coluna}.jpg"
+    predicoes, _ = _obter_predicoes_modelo([nome_arquivo])
+    pred = predicoes.get(nome_arquivo)
+
+    alertas = []
+    if _eh_fora_regra_padrao(codigo_norm, coroas):
+        alertas.append("fora_regra_padrao")
+
+    pred_divergente = None
+    conf_divergente = None
+    if pred is not None and pred["codigo"] != codigo_norm and pred["confianca"] >= 0.80:
+        alertas.append("divergencia_modelo")
+        pred_divergente = pred
+        conf_divergente = pred["confianca"]
+
+    return {
+        "mensagem": f"Célula ({linha}, {coluna}) de '{prefixo}' atualizada: {codigo_anterior} -> {codigo_norm}.",
+        "prefixo": prefixo,
+        "linha": linha,
+        "coluna": coluna,
+        "codigo_anterior": codigo_anterior,
+        "descartada": False,
+        "celula": {
+            "arquivo": nome_arquivo,
+            "prefixo": prefixo,
+            "linha": linha,
+            "coluna": coluna,
+            "codigo": codigo_norm,
+            "terreno": terreno,
+            "coroas": coroas,
+            "classe_combinada": f"{terreno}_{coroas}",
+            "url_recorte": f"/imagens/celulas/{nome_arquivo}",
+            "alertas": alertas,
+            "predicao_modelo": pred_divergente,
+            "confianca_modelo": conf_divergente,
+        },
     }
 
 

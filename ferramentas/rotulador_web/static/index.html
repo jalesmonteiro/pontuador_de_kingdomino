@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rotulador Visual de Tabuleiros — Kingdomino</title>
-  <link rel="stylesheet" href="/static/estilo.css" />
+  <link rel="stylesheet" href="/static/estilo.css?v=3" />
 </head>
 <body>
   <div id="recipiente-toasts" class="recipiente-toasts" aria-live="polite"></div>
@@ -14,9 +14,29 @@
       <span class="icone-coroa">👑</span>
       <div>
         <h1>Rotulador de Tabuleiros — Kingdomino</h1>
-        <p class="subtitulo">Anotação de matrizes de terrenos e coroas</p>
+        <p class="subtitulo">Anotação de matrizes e auditoria de células por classe</p>
       </div>
     </div>
+
+    <nav class="abas-navegacao" aria-label="Abas principais">
+      <button
+        id="botao-aba-rotulagem"
+        type="button"
+        class="botao-aba ativo"
+        data-aba="rotulagem"
+      >
+        Rotulagem
+      </button>
+      <button
+        id="botao-aba-ajustes"
+        type="button"
+        class="botao-aba"
+        data-aba="ajustes"
+      >
+        Ajustes
+        <span id="contador-alertas-aba" class="badge-aba oculto">0</span>
+      </button>
+    </nav>
 
     <div class="controles-progresso">
       <div class="texto-progresso">
@@ -29,8 +49,8 @@
     </div>
   </header>
 
-  <main class="grade-principal">
-    <!-- Coluna Esquerda: Visualização da Imagem e Seletor -->
+  <!-- ABA 1: ROTULAGEM -->
+  <main id="visao-rotulagem" class="grade-principal">
     <section class="painel painel-esquerdo">
       <div class="cabecalho-painel">
         <div class="info-tabuleiro-atual">
@@ -48,6 +68,27 @@
           </select>
 
           <select id="seletor-tabuleiro" class="campo-selecao seletor-largo" title="Selecionar tabuleiro"></select>
+
+          <div class="navegacao-imagem">
+            <button
+              id="botao-imagem-anterior"
+              type="button"
+              class="botao-nav-imagem"
+              title="Tabuleiro anterior"
+              aria-label="Tabuleiro anterior"
+            >
+              &lt;
+            </button>
+            <button
+              id="botao-imagem-proxima"
+              type="button"
+              class="botao-nav-imagem"
+              title="Próximo tabuleiro"
+              aria-label="Próximo tabuleiro"
+            >
+              &gt;
+            </button>
+          </div>
         </div>
       </div>
 
@@ -59,7 +100,6 @@
       </div>
     </section>
 
-    <!-- Coluna Direita: Legenda, Grade Interativa e Ações -->
     <section class="painel painel-direito">
       <div class="painel-teclado-atalhos">
         <div class="cabecalho-teclado-atalhos">
@@ -178,6 +218,99 @@
     </section>
   </main>
 
-  <script src="/static/app.js"></script>
+  <!-- ABA 2: AJUSTES (INSPEÇÃO POR CLASSE) -->
+  <main id="visao-ajustes" class="painel-ajustes-container oculto">
+    <section class="painel barra-filtros-ajustes">
+      <div class="grupo-filtros-ajustes">
+        <label class="campo-filtro">
+          <span>Terreno:</span>
+          <select id="filtro-ajustes-terreno" class="campo-selecao">
+            <option value="todos">Todos</option>
+            <option value="floresta">Floresta (f)</option>
+            <option value="deserto">Deserto (d)</option>
+            <option value="oceano">Oceano (o)</option>
+            <option value="planicie">Planície (g)</option>
+            <option value="pantano">Pântano (p)</option>
+            <option value="mineracao">Mineração (m)</option>
+            <option value="castelo">Castelo (c)</option>
+            <option value="vazio">Vazio (v)</option>
+          </select>
+        </label>
+
+        <label class="campo-filtro">
+          <span>Coroas:</span>
+          <select id="filtro-ajustes-coroas" class="campo-selecao">
+            <option value="todas">Todas</option>
+            <option value="0">0 coroas</option>
+            <option value="1">1 coroa</option>
+            <option value="2">2 coroas</option>
+            <option value="3">3 coroas</option>
+          </select>
+        </label>
+
+        <label class="checkbox-filtro">
+          <input type="checkbox" id="check-apenas-fora-regra" />
+          <span>Apenas fora da regra padrão (<strong id="contagem-fora-regra">0</strong>)</span>
+        </label>
+
+        <label class="checkbox-filtro">
+          <input type="checkbox" id="check-apenas-divergencias" />
+          <span>Apenas divergências sugeridas pelo modelo (<strong id="contagem-divergencias">0</strong>)</span>
+        </label>
+      </div>
+
+      <div class="acoes-topo-ajustes">
+        <span id="resumo-total-ajustes" class="resumo-contagem-ajustes">0 células exibidas</span>
+        <button id="botao-recarregar-ajustes" type="button" class="botao botao-secundario">
+          Atualizar Inspeção
+        </button>
+        <button id="botao-compilar-ajustes" type="button" class="botao botao-primario">
+          Compilar Dataset
+        </button>
+      </div>
+    </section>
+
+    <section id="recipiente-secoes-classes" class="recipiente-secoes-classes"></section>
+  </main>
+
+  <!-- MODAL / POPOVER DE CORREÇÃO RÁPIDA DE CÉLULA -->
+  <div id="modal-edicao-celula" class="fundo-modal oculto" role="dialog" aria-modal="true">
+    <div class="caixa-modal-celula">
+      <div class="cabecalho-modal-celula">
+        <div>
+          <h3 id="modal-titulo-celula">Editar Célula</h3>
+          <p id="modal-subtitulo-celula" class="subtitulo"></p>
+        </div>
+        <button id="botao-fechar-modal" type="button" class="botao-fechar-modal" aria-label="Fechar">
+          ✕
+        </button>
+      </div>
+
+      <div class="corpo-modal-celula">
+        <div class="previa-celula-modal">
+          <img id="modal-imagem-celula" src="" alt="Recorte da célula" />
+          <div class="info-previa-modal">
+            <div>Rótulo atual: <span id="modal-rotulo-atual" class="badge-codigo-card">-</span></div>
+            <div id="modal-bloco-sugestao" class="bloco-sugestao-modal oculto">
+              <span>Sugestão IA: <strong id="modal-texto-sugestao">-</strong></span>
+              <button id="botao-aceitar-sugestao" type="button" class="botao botao-sucesso-pequeno">
+                Aplicar sugestão
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grade-botoes-rapidos" id="grade-botoes-rapidos-modal"></div>
+      </div>
+
+      <div class="rodape-modal-celula">
+        <button id="botao-abrir-tabuleiro-rotulagem" type="button" class="botao botao-secundario">
+          Abrir tabuleiro na Rotulagem
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=3"></script>
 </body>
 </html>
