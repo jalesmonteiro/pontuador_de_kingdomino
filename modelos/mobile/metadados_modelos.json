@@ -1,0 +1,155 @@
+{
+  "versao_pipeline": "1.0.0",
+  "precisao_padrao": "FP16",
+  "opset_onnx": 17,
+  "detector": {
+    "arquivo": "detector_tabuleiro_rfdetr_fp16.onnx",
+    "arquitetura": "RFDETRSegSmall",
+    "tamanho_entrada": 648,
+    "formato_canais": "RGB",
+    "escala_pixels": [
+      0.0,
+      1.0
+    ],
+    "media_normalizacao_rgb": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "desvio_normalizacao_rgb": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "limiar_confianca": 0.5,
+    "area_minima_relativa": 0.02,
+    "indice_classe_tabuleiro": 0,
+    "formato_caixa_saida": "cxcywh_normalizado",
+    "ativacao_confianca": "sigmoid",
+    "limiar_logit_mascara": 0.0,
+    "criterio_selecao_reino": {
+      "peso_area_relativa": 0.6,
+      "peso_proximidade_centro_inferior": 0.4,
+      "ponto_referencia_relativo_xy": [
+        0.5,
+        0.9
+      ]
+    },
+    "mapa_classes": {
+      "principal": "reino_principal",
+      "secundario": "reino_ignorado"
+    },
+    "tensores_entrada": [
+      {
+        "nome": "input",
+        "formato": [
+          1,
+          3,
+          648,
+          648
+        ],
+        "tipo": "float32"
+      }
+    ],
+    "tensores_saida": [
+      {
+        "nome": "dets",
+        "formato": [
+          1,
+          100,
+          4
+        ],
+        "tipo": "float32"
+      },
+      {
+        "nome": "labels",
+        "formato": [
+          1,
+          100,
+          2
+        ],
+        "tipo": "float32"
+      },
+      {
+        "nome": "masks",
+        "formato": [
+          1,
+          100,
+          162,
+          162
+        ],
+        "tipo": "float32"
+      }
+    ]
+  },
+  "classificador": {
+    "arquivo": "classificador_celulas_fp16.onnx",
+    "arquitetura": "mobilenet_v3_small",
+    "tamanho_entrada": 160,
+    "formato_canais": "RGB",
+    "escala_pixels": [
+      0.0,
+      1.0
+    ],
+    "media_normalizacao_rgb": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "desvio_normalizacao_rgb": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "classes_terreno": [
+      "castelo",
+      "deserto",
+      "floresta",
+      "mineracao",
+      "oceano",
+      "pantano",
+      "planicie",
+      "vazio"
+    ],
+    "classes_coroas": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "terrenos_sem_coroa": [
+      "castelo",
+      "vazio"
+    ],
+    "tensores_entrada": [
+      {
+        "nome": "imagem",
+        "formato": [
+          "lote",
+          3,
+          160,
+          160
+        ],
+        "tipo": "float32"
+      }
+    ],
+    "tensores_saida": [
+      {
+        "nome": "logits_terreno",
+        "formato": [
+          "lote",
+          8
+        ],
+        "tipo": "float32"
+      },
+      {
+        "nome": "logits_coroas",
+        "formato": [
+          "lote",
+          4
+        ],
+        "tipo": "float32"
+      }
+    ]
+  }
+}

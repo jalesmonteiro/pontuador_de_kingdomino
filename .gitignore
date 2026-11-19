@@ -39,11 +39,13 @@ lightning_logs/
 mlruns/
 *.log
 
-# Pesos de Modelos Treinados (mantém a pasta modelos/ via .gitkeep)
+# Pesos de Modelos Treinados (mantém a pasta modelos/ via .gitkeep e metadados JSON do mobile)
 modelos/*.pth
 modelos/*.pt
 modelos/*.onnx
+modelos/mobile/*.onnx
 !modelos/.gitkeep
+!modelos/mobile/metadados_modelos.json
 
 # Dados Brutos, Recortes e Imagens Intermediárias
 # Mantém versionados dados/rotulos_tabuleiros.json e dados/dataset_celulas/rotulos_celulas.csv
