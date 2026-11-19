@@ -5,3 +5,5 @@ torchvision
 rfdetr
 roboflow
 supervision
+fastapi
+uvicorn
