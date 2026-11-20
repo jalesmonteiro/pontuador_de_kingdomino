@@ -111,6 +111,7 @@ def desenhar_resultado_pontuacao(
         conjunto_celulas = set(regiao["celulas"])
         espessura_ext = 6 if regiao["pontos"] > 0 else 2
         espessura_int = 3 if regiao["pontos"] > 0 else 1
+        recuo = 5 if regiao["pontos"] > 0 else 3
 
         segmentos = []
         for r, c in conjunto_celulas:
@@ -118,13 +119,28 @@ def desenhar_resultado_pontuacao(
             x1, x2 = int(cortes_x[c]), int(cortes_x[c + 1])
 
             if (r - 1, c) not in conjunto_celulas:
-                segmentos.append(((x1, y1), (x2, y1)))
+                y_linha = y1 + recuo
+                x_ini = x1 + recuo if ((r, c - 1) not in conjunto_celulas or (r - 1, c - 1) in conjunto_celulas) else x1
+                x_fim = x2 - recuo if ((r, c + 1) not in conjunto_celulas or (r - 1, c + 1) in conjunto_celulas) else x2
+                segmentos.append(((x_ini, y_linha), (x_fim, y_linha)))
+
             if (r + 1, c) not in conjunto_celulas:
-                segmentos.append(((x1, y2), (x2, y2)))
+                y_linha = y2 - recuo
+                x_ini = x1 + recuo if ((r, c - 1) not in conjunto_celulas or (r + 1, c - 1) in conjunto_celulas) else x1
+                x_fim = x2 - recuo if ((r, c + 1) not in conjunto_celulas or (r + 1, c + 1) in conjunto_celulas) else x2
+                segmentos.append(((x_ini, y_linha), (x_fim, y_linha)))
+
             if (r, c - 1) not in conjunto_celulas:
-                segmentos.append(((x1, y1), (x1, y2)))
+                x_linha = x1 + recuo
+                y_ini = y1 + recuo if ((r - 1, c) not in conjunto_celulas or (r - 1, c - 1) in conjunto_celulas) else y1
+                y_fim = y2 - recuo if ((r + 1, c) not in conjunto_celulas or (r + 1, c - 1) in conjunto_celulas) else y2
+                segmentos.append(((x_linha, y_ini), (x_linha, y_fim)))
+
             if (r, c + 1) not in conjunto_celulas:
-                segmentos.append(((x2, y1), (x2, y2)))
+                x_linha = x2 - recuo
+                y_ini = y1 + recuo if ((r - 1, c) not in conjunto_celulas or (r - 1, c + 1) in conjunto_celulas) else y1
+                y_fim = y2 - recuo if ((r + 1, c) not in conjunto_celulas or (r + 1, c + 1) in conjunto_celulas) else y2
+                segmentos.append(((x_linha, y_ini), (x_linha, y_fim)))
 
         for p1, p2 in segmentos:
             cv2.line(tela, p1, p2, (15, 15, 15), espessura_ext, cv2.LINE_AA)

@@ -6,12 +6,30 @@ Sistema ponta a ponta de Visão Computacional para detectar tabuleiros do jogo *
 
 ## Visão Geral do Pipeline
 
-1. **Detecção e Segmentação do Tabuleiro (`RF-DETR`):** isola o `reino_principal` na mesa e ignora tabuleiros secundários (`reino_ignorado`).
+1. **Detecção e Segmentação do Tabuleiro (`RF-DETR`):** `RFDETRSegSmall(resolution=648)` isola o `reino_principal` na mesa e ignora tabuleiros secundários (`reino_ignorado`).
 2. **Geometria e Homografia (`RANSAC` + `Sobel/Black-Hat`):** extrai os 4 cantos reais do tabuleiro, estima automaticamente a dimensão da grade (`5x5`, `5x6`, `6x6`, `7x7`), retifica a imagem em visão superior (`200x200` px por célula) e ajusta as linhas de corte aos vincos físicos entre os dominós.
-3. **Classificador Multi-Tarefa (`PyTorch`):** prediz simultaneamente o terreno (`floresta`, `deserto`, `oceano`, `planicie`, `pantano`, `mineracao`, `castelo`, `vazio`) e a quantidade de coroas (`0`, `1`, `2`, `3`) de cada célula (**99.58%** de acurácia combinada na validação).
-4. **Motor de Regras (`BFS`):** agrupa propriedades ortogonalmente conexas, calcula $\text{quadrados} \times \text{coroas}$ por região, aplica os bônus opcionais (*Harmonia* `+5 pts` e *Reino do Meio* `+10 pts`) e gera a imagem anotada com o placar final.
+3. **Classificador Multi-Tarefa (`src/classificador.py`):** rede PyTorch (`mobilenet_v3_small` / `efficientnet_b0`) com duas cabeças paralelas que predizem simultaneamente o terreno (`floresta`, `deserto`, `oceano`, `planicie`, `pantano`, `mineracao`, `castelo`, `vazio`) e a quantidade de coroas (`0`, `1`, `2`, `3`) de cada célula (**99.58%** de acurácia combinada na validação).
+4. **Motor de Regras (`src/pontuacao.py`):** agrupa propriedades ortogonalmente conexas via BFS, calcula $\text{quadrados} \times \text{coroas}$ por região, aplica os bônus opcionais (*Harmonia* `+5 pts` e *Reino do Meio* `+10 pts`) e gera a imagem anotada com o placar final.
 
 Consulte [docs/arquitetura_e_metodologia.md](docs/arquitetura_e_metodologia.md) para detalhes técnicos completos.
+
+---
+
+## Classificador Multi-Tarefa de Células (`src/classificador.py`)
+
+O módulo `ClassificadorCelulasKingdomino` realiza a leitura simultânea do tipo de terreno e do número de coroas em cada célula fatiada do tabuleiro:
+
+- **Backbone:** `mobilenet_v3_small` (padrão leve para CPU e mobile) ou `efficientnet_b0`, com pesos pré-treinados na ImageNet.
+- **Cabeças paralelas (Multi-Task):**
+  - `cabeca_terreno`: 8 classes (`castelo`, `deserto`, `floresta`, `mineracao`, `oceano`, `pantano`, `planicie`, `vazio`).
+  - `cabeca_coroas`: 4 classes (`0`, `1`, `2`, `3`), aplicando a regra física de `0` coroas para `castelo` e `vazio`.
+- **Entrada e pré-processamento:** recortes `RGB` redimensionados para `160x160` (`NCHW`), normalizados com média `[0.485, 0.456, 0.406]` e desvio `[0.229, 0.224, 0.225]`, processados em lote único por tabuleiro.
+- **Treinamento sem vazamento de dados:** divisão `80/20` agrupada por tabuleiro (`StratifiedGroupKFold` sobre `prefixo`), rotações ortogonais exatas (`0°`, `90°`, `180°`, `270°`), espelhamentos, `ColorJitter` controlado e `CrossEntropyLoss` balanceada por frequência inversa.
+- **Métricas de validação (`239` células de `9` tabuleiros inéditos):**
+  - **Terreno:** `100.00%`
+  - **Coroas:** `99.58%`
+  - **Exata combinada (Terreno + Coroas):** `99.58%`
+- **Exportação Mobile (`ONNX FP16`):** convertido para `modelos/mobile/classificador_celulas_fp16.onnx` (`1.81 MB`, `100.00%` de paridade com PyTorch FP32).
 
 ---
 
@@ -35,11 +53,13 @@ pontuador_de_kingdomino/
 │   ├── compilar_dataset_celulas.py         # Compila rotulos_tabuleiros.json em rotulos_celulas.csv
 │   ├── treinar_classificador_celulas.py    # Treinamento multi-tarefa sem vazamento por tabuleiro + MLflow
 │   ├── avaliar_pipeline_completo.py        # Avaliação ponta a ponta do placar nos tabuleiros íntegros
+│   ├── exportar_modelos_mobile.py          # Exportação ONNX FP16, metadados Flutter e validação de paridade
 │   └── experimentos/
 │       └── comparar_extracao_cantos.py     # Experimento comparativo de métodos de extração de cantos
 ├── ferramentas/
+│   ├── avaliador_desktop.py                # Aplicativo Desktop (Tkinter) para avaliar fotos passo a passo
 │   └── rotulador_web/                      # Ferramenta web local (FastAPI + HTML/CSS/JS)
-│       ├── servidor.py                     # Backend FastAPI (rotulagem, inspeção com IA e compilação)
+│       ├── servidor.py                     # Backend FastAPI (rotulagem, inspeção com IA, avaliação e compilação)
 │       └── static/                         # Frontend (index.html, estilo.css, app.js)
 ├── testes/
 │   ├── amostras/
@@ -53,7 +73,11 @@ pontuador_de_kingdomino/
 │   └── 03_pipeline_inferencia_demo.ipynb   # Demonstração interativa de inferência
 ├── modelos/
 │   ├── detector_tabuleiro_rfdetr.pth       # Pesos do detector RFDETRSegSmall (ignorado no Git)
-│   └── classificador_celulas.pth           # Pesos do classificador multi-tarefa (ignorado no Git)
+│   ├── classificador_celulas.pth           # Pesos do classificador multi-tarefa (ignorado no Git)
+│   └── mobile/
+│       ├── detector_tabuleiro_rfdetr_fp16.onnx  # Detector ONNX FP16 (69.18 MB, ignorado no Git)
+│       ├── classificador_celulas_fp16.onnx      # Classificador ONNX FP16 (1.81 MB, ignorado no Git)
+│       └── metadados_modelos.json               # Metadados e parâmetros para o app Flutter (versionado)
 └── dados/
     ├── rotulos_tabuleiros.json             # Matrizes rotuladas manualmente (versionado no Git)
     ├── dataset_celulas/
@@ -92,7 +116,7 @@ Via script de teste rápido:
 python testes/teste_pipeline_completo.py
 ```
 
-Ou diretamente via Python usando `pontuar_imagem_partida`:
+Ou diretamente via Python usando `pontuar_imagem_partida` e `classificar_lote_celulas`:
 
 ```python
 from src.pipeline_pontuacao import pontuar_imagem_partida
@@ -107,17 +131,27 @@ saida = pontuar_imagem_partida(
 print(saida["relatorio_texto"])
 ```
 
-### 2. Ferramenta Web de Rotulagem e Inspeção por Classe
+Para usar apenas o classificador em uma matriz de células já fatiada (`fatiar_grade`):
 
-Para abrir a interface web local (com abas **Rotulagem** por atalhos do teclado numérico e **Ajustes** para auditoria visual assistida pelo modelo):
+```python
+from src.classificador import classificar_lote_celulas
 
-```powershell
-uvicorn ferramentas.rotulador_web.servidor:app --reload
+matriz_terrenos, matriz_coroas = classificar_lote_celulas(matriz_celulas)
 ```
 
-Acesse `http://127.0.0.1:8000` no navegador.
+### 2. Aplicativo Desktop e Ferramenta Web (Rotulagem, Inspeção e Avaliação)
 
-### 3. Scripts do Pipeline de Dataset e Treinamento
+- **Avaliador Desktop (selecionar foto e ver todas as etapas + placar):**
+  ```powershell
+  python ferramentas/avaliador_desktop.py
+  ```
+- **Interface Web Local (abas *Rotulagem*, *Ajustes* com auditoria por classe e *Avaliar Foto*):**
+  ```powershell
+  uvicorn ferramentas.rotulador_web.servidor:app --reload
+  ```
+  Acesse `http://127.0.0.1:8000` no navegador.
+
+### 3. Scripts do Pipeline de Dataset, Treinamento e Exportação Mobile
 
 - **Processar fotos brutas e gerar recortes (Etapas 0 a 4):**
   ```powershell
@@ -134,4 +168,8 @@ Acesse `http://127.0.0.1:8000` no navegador.
 - **Avaliar o pipeline completo nos tabuleiros íntegros:**
   ```powershell
   python scripts/avaliar_pipeline_completo.py
+  ```
+- **Exportar modelos ONNX FP16 e validar paridade para o app mobile:**
+  ```powershell
+  python scripts/exportar_modelos_mobile.py
   ```
