@@ -1,4 +1,5 @@
 import base64
+import io
 import json
 import os
 import re
@@ -7,9 +8,9 @@ import sys
 import cv2
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, ImageOps
 from fastapi import Body, FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 raiz_projeto = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -23,9 +24,23 @@ from scripts.compilar_dataset_celulas import (
 )
 from src.classificador import (
     CAMINHO_CLASSIFICADOR_PADRAO,
+    CLASSES_COROAS,
+    CLASSES_TERRENO,
+    DESVIO_IMAGENET,
+    MEDIA_IMAGENET,
     carregar_classificador_celulas,
+    criar_transformacao_inferencia,
+)
+from src.geometria import (
+    aplicar_homografia,
+    calcular_linhas_corte_ajustadas,
+    carregar_modelo_tabuleiro,
+    detectar_reinos,
+    estimar_dimensao_grade,
+    fatiar_grade,
 )
 from src.pipeline_pontuacao import executar_pipeline_visual_completo
+from src.pontuacao import calcular_pontuacao_reino, construir_matriz
 
 PASTA_ESTATICOS = os.path.join(os.path.dirname(__file__), "static")
 PASTA_DADOS = os.path.join(raiz_projeto, "dados")
@@ -577,3 +592,490 @@ def avaliar_imagem_completa(dados=Body(...)):
         "relatorio_texto": saida["relatorio_texto"],
         "etapas_visuais": etapas_serializadas,
     }
+
+
+def _gerar_diagnostico_etapa1(bytes_img):
+    img_pil = Image.open(io.BytesIO(bytes_img))
+    img_pil = ImageOps.exif_transpose(img_pil).convert("RGB")
+    largura_orig, altura_orig = img_pil.size
+
+    img_redim = (
+        np.asarray(
+            img_pil.resize((648, 648), Image.Resampling.BILINEAR),
+            dtype=np.float32,
+        )
+        / 255.0
+    )
+    media_rgb = np.array(MEDIA_IMAGENET, dtype=np.float32)
+    desvio_rgb = np.array(DESVIO_IMAGENET, dtype=np.float32)
+    tensor_np = ((img_redim - media_rgb) / desvio_rgb).transpose(2, 0, 1)[None, ...]
+    tensor_torch = torch.from_numpy(tensor_np)
+
+    modelo_rfdetr = carregar_modelo_tabuleiro()
+    rede_interna = modelo_rfdetr.model.model
+    dispositivo_modelo = next(rede_interna.parameters()).device
+    rede_interna.eval()
+
+    with torch.no_grad():
+        saida_bruta = rede_interna(tensor_torch.to(dispositivo_modelo))
+
+    pred_logits = saida_bruta["pred_logits"][0].detach().cpu().numpy()
+    pred_boxes = saida_bruta["pred_boxes"][0].detach().cpu().numpy()
+    pred_masks = saida_bruta["pred_masks"][0].detach().cpu().numpy()
+
+    probs_reino = 1.0 / (1.0 + np.exp(-pred_logits[:, 0]))
+    indices_top5 = np.argsort(probs_reino)[::-1][:5]
+
+    areas_top5 = []
+    proximidades_top5 = []
+    for idx in indices_top5:
+        mascara_162 = pred_masks[idx]
+        area_rel = float(np.mean(mascara_162 > 0.0))
+        areas_top5.append(area_rel)
+
+        cx_n = float(pred_boxes[idx][0])
+        cy_n = float(pred_boxes[idx][1])
+        dist = float(np.hypot(cx_n - 0.5, cy_n - 0.9))
+        proximidades_top5.append(max(0.0, 1.0 - dist))
+
+    maior_area = max(areas_top5) if areas_top5 and max(areas_top5) > 0.0 else 1.0
+
+    top_5_deteccoes = []
+    for pos, idx in enumerate(indices_top5):
+        area_rel = areas_top5[pos]
+        score_ranq = 0.6 * (area_rel / maior_area) + 0.4 * proximidades_top5[pos]
+        top_5_deteccoes.append({
+            "indice_query": int(idx),
+            "confianca_sigmoid": round(float(probs_reino[idx]), 6),
+            "caixa_cx_cy_w_h": [round(float(v), 6) for v in pred_boxes[idx]],
+            "area_relativa_mascara": round(area_rel, 6),
+            "score_ranqueamento": round(float(score_ranq), 6),
+        })
+
+    # Seleciona a detecção escolhida pelo maior score entre as candidatas válidas (>= 0.5 e área >= 2%)
+    candidatas_validas = [
+        d for d in top_5_deteccoes
+        if d["confianca_sigmoid"] >= 0.5 and d["area_relativa_mascara"] >= 0.02
+    ]
+    if candidatas_validas:
+        escolhida_meta = max(candidatas_validas, key=lambda d: d["score_ranqueamento"])
+    else:
+        escolhida_meta = top_5_deteccoes[0]
+
+    idx_escolhido = escolhida_meta["indice_query"]
+    mascara_escolhida = pred_masks[idx_escolhido]
+
+    return {
+        "dimensoes_imagem_original": [int(largura_orig), int(altura_orig)],
+        "tensor_entrada_detector": {
+            "shape": [int(d) for d in tensor_np.shape],
+            "min": round(float(np.min(tensor_np)), 6),
+            "max": round(float(np.max(tensor_np)), 6),
+            "media": round(float(np.mean(tensor_np)), 6),
+            "desvio": round(float(np.std(tensor_np)), 6),
+            "pixel_0_0_rgb": [round(float(v), 6) for v in tensor_np[0, :, 0, 0]],
+            "pixel_central_rgb": [round(float(v), 6) for v in tensor_np[0, :, 324, 324]],
+        },
+        "top_5_deteccoes": top_5_deteccoes,
+        "deteccao_escolhida": {
+            "confianca_sigmoid": escolhida_meta["confianca_sigmoid"],
+            "caixa_cx_cy_w_h": escolhida_meta["caixa_cx_cy_w_h"],
+            "mascara_162_min": round(float(np.min(mascara_escolhida)), 6),
+            "mascara_162_max": round(float(np.max(mascara_escolhida)), 6),
+            "mascara_162_positivos": int(np.sum(mascara_escolhida > 0.0)),
+            "mascara_162_linha_central": [
+                round(float(v), 4) for v in mascara_escolhida[81, :]
+            ],
+        },
+    }
+
+
+@app.post("/api/diagnostico-etapa1")
+def exportar_diagnostico_etapa1(dados=Body(...)):
+    imagem_b64 = str(dados.get("imagem_base64", "")).strip()
+    if not imagem_b64:
+        raise HTTPException(
+            status_code=400,
+            detail="Nenhuma imagem enviada para diagnóstico.",
+        )
+
+    if "," in imagem_b64:
+        imagem_b64 = imagem_b64.split(",", 1)[1]
+
+    try:
+        bytes_img = base64.b64decode(imagem_b64)
+        diagnostico = _gerar_diagnostico_etapa1(bytes_img)
+    except Exception as erro:
+        raise HTTPException(status_code=422, detail=str(erro))
+
+    conteudo_json = json.dumps(diagnostico, ensure_ascii=False, indent=2)
+    return Response(
+        content=conteudo_json,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="diagnostico_etapa1_python.json"'
+        },
+    )
+
+
+def _gerar_diagnostico_etapa2(bytes_img):
+    img_pil = Image.open(io.BytesIO(bytes_img))
+    img_pil = ImageOps.exif_transpose(img_pil).convert("RGB")
+    imagem_bgr = cv2.cvtColor(np.asarray(img_pil), cv2.COLOR_RGB2BGR)
+
+    principal, _ = detectar_reinos(imagem_bgr)
+    if principal is None:
+        raise ValueError("Nenhum tabuleiro detectado para gerar diagnóstico da Etapa 2.")
+
+    contorno = principal["contorno"]
+    vertices = principal["vertices"]
+
+    img_preliminar, _ = aplicar_homografia(imagem_bgr, vertices, tamanho_saida=980)
+    linhas, colunas = estimar_dimensao_grade(
+        img_preliminar, candidatos_dimensao=(5, 6, 7)
+    )
+
+    tamanho_final = (colunas * 200, linhas * 200)
+    img_final, _ = aplicar_homografia(
+        imagem_bgr, vertices, tamanho_saida=tamanho_final
+    )
+
+    alt_final, larg_final = img_final.shape[:2]
+    cy = alt_final // 2
+    cx = larg_final // 2
+    media_bgr = np.mean(img_final, axis=(0, 1))
+
+    return {
+        "quantidade_pontos_contorno": int(len(contorno)),
+        "metodo_ajuste_cantos": "simplificar_para_quadrilatero_busca_binaria + ransac_bordas_contorno_real_trava_15_graus_huber",
+        "vertices_4_cantos": [
+            [round(float(pt[0]), 2), round(float(pt[1]), 2)] for pt in vertices
+        ],
+        "dimensoes_homografia_preliminar": [
+            int(img_preliminar.shape[1]),
+            int(img_preliminar.shape[0]),
+        ],
+        "grade_estimada": [int(linhas), int(colunas)],
+        "dimensoes_homografia_final": [int(larg_final), int(alt_final)],
+        "amostra_retificada": {
+            "pixel_0_0_bgr": [int(v) for v in img_final[0, 0]],
+            "pixel_central_bgr": [int(v) for v in img_final[cy, cx]],
+            "media_canais_bgr": [round(float(v), 2) for v in media_bgr],
+        },
+    }
+
+
+@app.post("/api/diagnostico-etapa2")
+def exportar_diagnostico_etapa2(dados=Body(...)):
+    imagem_b64 = str(dados.get("imagem_base64", "")).strip()
+    if not imagem_b64:
+        raise HTTPException(
+            status_code=400,
+            detail="Nenhuma imagem enviada para diagnóstico da Etapa 2.",
+        )
+
+    if "," in imagem_b64:
+        imagem_b64 = imagem_b64.split(",", 1)[1]
+
+    try:
+        bytes_img = base64.b64decode(imagem_b64)
+        diagnostico = _gerar_diagnostico_etapa2(bytes_img)
+    except Exception as erro:
+        raise HTTPException(status_code=422, detail=str(erro))
+
+    conteudo_json = json.dumps(diagnostico, ensure_ascii=False, indent=2)
+    return Response(
+        content=conteudo_json,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="diagnostico_etapa2_python.json"'
+        },
+    )
+
+
+def _gerar_diagnostico_etapa3(bytes_img):
+    img_pil = Image.open(io.BytesIO(bytes_img))
+    img_pil = ImageOps.exif_transpose(img_pil).convert("RGB")
+    imagem_bgr = cv2.cvtColor(np.asarray(img_pil), cv2.COLOR_RGB2BGR)
+
+    principal, _ = detectar_reinos(imagem_bgr)
+    if principal is None:
+        raise ValueError("Nenhum tabuleiro detectado para gerar diagnóstico da Etapa 3.")
+
+    vertices = principal["vertices"]
+    img_preliminar, _ = aplicar_homografia(imagem_bgr, vertices, tamanho_saida=980)
+    linhas, colunas = estimar_dimensao_grade(
+        img_preliminar, candidatos_dimensao=(5, 6, 7)
+    )
+
+    tamanho_final = (colunas * 200, linhas * 200)
+    img_final, _ = aplicar_homografia(
+        imagem_bgr, vertices, tamanho_saida=tamanho_final
+    )
+    alt_final, larg_final = img_final.shape[:2]
+
+    cortes_y, cortes_x = calcular_linhas_corte_ajustadas(
+        img_final, linhas, colunas
+    )
+    margem_interna = 4
+    matriz_celulas = fatiar_grade(
+        img_final,
+        linhas=linhas,
+        colunas=colunas,
+        margem_interna=margem_interna,
+        cortes_y=cortes_y,
+        cortes_x=cortes_x,
+    )
+
+    transformacao = criar_transformacao_inferencia(160)
+    tensores_celulas = []
+    mapa_indices = {}
+
+    for r in range(linhas):
+        for c in range(colunas):
+            recorte_bgr = matriz_celulas[r][c]
+            img_cel_rgb = Image.fromarray(cv2.cvtColor(recorte_bgr, cv2.COLOR_BGR2RGB))
+            mapa_indices[(r, c)] = len(tensores_celulas)
+            tensores_celulas.append(transformacao(img_cel_rgb))
+
+    tensor_np = torch.stack(tensores_celulas, dim=0).cpu().numpy()
+
+    amostra_celulas = {}
+    for r, c in ((0, 0), (2, 2), (4, 4)):
+        if r >= linhas or c >= colunas:
+            continue
+        x1 = max(0, int(cortes_x[c]) + margem_interna)
+        x2 = min(larg_final, int(cortes_x[c + 1]) - margem_interna)
+        y1 = max(0, int(cortes_y[r]) + margem_interna)
+        y2 = min(alt_final, int(cortes_y[r + 1]) - margem_interna)
+
+        recorte_bgr = matriz_celulas[r][c]
+        proporcao_preto = float(np.mean(np.all(recorte_bgr == 0, axis=2)))
+        tensor_cel = tensor_np[mapa_indices[(r, c)]]
+
+        amostra_celulas[f"{r}_{c}"] = {
+            "caixa_recorte_px": [x1, y1, max(0, x2 - x1), max(0, y2 - y1)],
+            "proporcao_preto": round(proporcao_preto, 6),
+            "tensor_min": round(float(np.min(tensor_cel)), 6),
+            "tensor_max": round(float(np.max(tensor_cel)), 6),
+            "tensor_media": round(float(np.mean(tensor_cel)), 6),
+            "pixel_central_rgb": [
+                round(float(v), 6) for v in tensor_cel[:, 80, 80]
+            ],
+        }
+
+    return {
+        "cortes_x": [round(float(v), 2) for v in cortes_x],
+        "cortes_y": [round(float(v), 2) for v in cortes_y],
+        "shape_tensor_celulas": [int(d) for d in tensor_np.shape],
+        "estatisticas_tensor_global": {
+            "min": round(float(np.min(tensor_np)), 6),
+            "max": round(float(np.max(tensor_np)), 6),
+            "media": round(float(np.mean(tensor_np)), 6),
+            "desvio": round(float(np.std(tensor_np)), 6),
+        },
+        "amostra_celulas": amostra_celulas,
+    }
+
+
+@app.post("/api/diagnostico-etapa3")
+def exportar_diagnostico_etapa3(dados=Body(...)):
+    imagem_b64 = str(dados.get("imagem_base64", "")).strip()
+    if not imagem_b64:
+        raise HTTPException(
+            status_code=400,
+            detail="Nenhuma imagem enviada para diagnóstico da Etapa 3.",
+        )
+
+    if "," in imagem_b64:
+        imagem_b64 = imagem_b64.split(",", 1)[1]
+
+    try:
+        bytes_img = base64.b64decode(imagem_b64)
+        diagnostico = _gerar_diagnostico_etapa3(bytes_img)
+    except Exception as erro:
+        raise HTTPException(status_code=422, detail=str(erro))
+
+    conteudo_json = json.dumps(diagnostico, ensure_ascii=False, indent=2)
+    return Response(
+        content=conteudo_json,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="diagnostico_etapa3_python.json"'
+        },
+    )
+
+
+_CACHE_SESSAO_ONNX_CLASSIFICADOR = None
+
+
+def _obter_sessao_onnx_classificador():
+    global _CACHE_SESSAO_ONNX_CLASSIFICADOR
+    if _CACHE_SESSAO_ONNX_CLASSIFICADOR is not None:
+        return _CACHE_SESSAO_ONNX_CLASSIFICADOR
+
+    caminho_onnx = os.path.join(
+        raiz_projeto, "modelos", "mobile", "classificador_celulas_fp16.onnx"
+    )
+    if not os.path.isfile(caminho_onnx):
+        return None
+
+    import onnxruntime as ort
+
+    opcoes = ort.SessionOptions()
+    opcoes.log_severity_level = 3
+    _CACHE_SESSAO_ONNX_CLASSIFICADOR = ort.InferenceSession(
+        caminho_onnx, opcoes, providers=["CPUExecutionProvider"]
+    )
+    return _CACHE_SESSAO_ONNX_CLASSIFICADOR
+
+
+def _softmax_vetor(valores):
+    arr = np.asarray(valores, dtype=np.float64)
+    deslocado = arr - np.max(arr)
+    exps = np.exp(deslocado)
+    return exps / np.sum(exps)
+
+
+def _gerar_diagnostico_etapa4(bytes_img):
+    img_pil = Image.open(io.BytesIO(bytes_img))
+    img_pil = ImageOps.exif_transpose(img_pil).convert("RGB")
+    imagem_bgr = cv2.cvtColor(np.asarray(img_pil), cv2.COLOR_RGB2BGR)
+
+    principal, _ = detectar_reinos(imagem_bgr)
+    if principal is None:
+        raise ValueError("Nenhum tabuleiro detectado para gerar diagnóstico da Etapa 4.")
+
+    vertices = principal["vertices"]
+    img_preliminar, _ = aplicar_homografia(imagem_bgr, vertices, tamanho_saida=980)
+    linhas, colunas = estimar_dimensao_grade(
+        img_preliminar, candidatos_dimensao=(5, 6, 7)
+    )
+
+    tamanho_final = (colunas * 200, linhas * 200)
+    img_final, _ = aplicar_homografia(
+        imagem_bgr, vertices, tamanho_saida=tamanho_final
+    )
+    cortes_y, cortes_x = calcular_linhas_corte_ajustadas(
+        img_final, linhas, colunas
+    )
+    matriz_celulas = fatiar_grade(
+        img_final,
+        linhas=linhas,
+        colunas=colunas,
+        margem_interna=4,
+        cortes_y=cortes_y,
+        cortes_x=cortes_x,
+    )
+
+    transformacao = criar_transformacao_inferencia(160)
+    tensores_celulas = []
+    coordenadas = []
+
+    for r in range(linhas):
+        for c in range(colunas):
+            recorte_bgr = matriz_celulas[r][c]
+            img_cel_rgb = Image.fromarray(cv2.cvtColor(recorte_bgr, cv2.COLOR_BGR2RGB))
+            tensores_celulas.append(transformacao(img_cel_rgb))
+            coordenadas.append((r, c))
+
+    tensor_np = torch.stack(tensores_celulas, dim=0).cpu().numpy().astype(np.float32)
+
+    sessao_onnx = _obter_sessao_onnx_classificador()
+    if sessao_onnx is not None:
+        nome_entrada = sessao_onnx.get_inputs()[0].name
+        nomes_saidas_onnx = [saida.name for saida in sessao_onnx.get_outputs()]
+        logits_terreno, logits_coroas = sessao_onnx.run(
+            None, {nome_entrada: tensor_np}
+        )
+        classes_terreno = CLASSES_TERRENO
+        classes_coroas = CLASSES_COROAS
+    else:
+        artefato = carregar_classificador_celulas(CAMINHO_CLASSIFICADOR_PADRAO)
+        nomes_saidas_onnx = ["logits_terreno", "logits_coroas"]
+        rede = artefato["modelo"]
+        disp = artefato["dispositivo"]
+        with torch.no_grad():
+            lt, lc = rede(torch.from_numpy(tensor_np).to(disp))
+            logits_terreno = lt.cpu().numpy()
+            logits_coroas = lc.cpu().numpy()
+        classes_terreno = artefato["classes_terreno"]
+        classes_coroas = artefato["classes_coroas"]
+
+    matriz_terrenos = [["vazio" for _ in range(colunas)] for _ in range(linhas)]
+    matriz_coroas = [[0 for _ in range(colunas)] for _ in range(linhas)]
+    celulas_detalhadas = []
+
+    for idx, (r, c) in enumerate(coordenadas):
+        vec_t = logits_terreno[idx]
+        vec_c = logits_coroas[idx]
+        probs_t = _softmax_vetor(vec_t)
+        probs_c = _softmax_vetor(vec_c)
+
+        idx_t = int(np.argmax(vec_t))
+        idx_c = int(np.argmax(vec_c))
+
+        terreno_pred = str(classes_terreno[idx_t])
+        coroas_pred = int(classes_coroas[idx_c])
+        conf_t = float(probs_t[idx_t])
+        conf_c = float(probs_c[idx_c])
+
+        if terreno_pred in ("castelo", "vazio"):
+            coroas_pred = 0
+
+        recorte_bgr = matriz_celulas[r][c]
+        if float(np.mean(np.all(recorte_bgr == 0, axis=2))) > 0.15:
+            terreno_pred = "vazio"
+            coroas_pred = 0
+
+        matriz_terrenos[r][c] = terreno_pred
+        matriz_coroas[r][c] = coroas_pred
+
+        celulas_detalhadas.append({
+            "posicao": [int(r), int(c)],
+            "logits_terreno": [round(float(v), 4) for v in vec_t],
+            "terreno_predito": terreno_pred,
+            "confianca_terreno": round(conf_t, 4),
+            "logits_coroas": [round(float(v), 4) for v in vec_c],
+            "coroas_preditas": coroas_pred,
+            "confianca_coroas": round(conf_c, 4),
+        })
+
+    matriz_reino = construir_matriz(matriz_terrenos, matriz_coroas)
+    resultado_pontuacao = calcular_pontuacao_reino(matriz_reino)
+
+    return {
+        "nomes_saidas_onnx": nomes_saidas_onnx,
+        "shape_logits_terreno": [int(d) for d in logits_terreno.shape],
+        "shape_logits_coroas": [int(d) for d in logits_coroas.shape],
+        "celulas_detalhadas": celulas_detalhadas,
+        "pontuacao_total": int(resultado_pontuacao["pontuacao_total"]),
+    }
+
+
+@app.post("/api/diagnostico-etapa4")
+def exportar_diagnostico_etapa4(dados=Body(...)):
+    imagem_b64 = str(dados.get("imagem_base64", "")).strip()
+    if not imagem_b64:
+        raise HTTPException(
+            status_code=400,
+            detail="Nenhuma imagem enviada para diagnóstico da Etapa 4.",
+        )
+
+    if "," in imagem_b64:
+        imagem_b64 = imagem_b64.split(",", 1)[1]
+
+    try:
+        bytes_img = base64.b64decode(imagem_b64)
+        diagnostico = _gerar_diagnostico_etapa4(bytes_img)
+    except Exception as erro:
+        raise HTTPException(status_code=422, detail=str(erro))
+
+    conteudo_json = json.dumps(diagnostico, ensure_ascii=False, indent=2)
+    return Response(
+        content=conteudo_json,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="diagnostico_etapa4_python.json"'
+        },
+    )

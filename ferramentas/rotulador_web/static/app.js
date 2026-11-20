@@ -1095,6 +1095,10 @@ async function enviarImagemParaAvaliacao(imagemBase64, nomeArquivo = "foto") {
       dados.relatorio_texto;
 
     document.getElementById("painel-resultado-avaliacao").classList.remove("oculto");
+    document.getElementById("botao-baixar-diagnostico-etapa1").disabled = false;
+    document.getElementById("botao-baixar-diagnostico-etapa2").disabled = false;
+    document.getElementById("botao-baixar-diagnostico-etapa3").disabled = false;
+    document.getElementById("botao-baixar-diagnostico-etapa4").disabled = false;
     selecionarEtapaDestaqueWeb(1);
 
     statusEl.textContent =
@@ -1103,6 +1107,52 @@ async function enviarImagemParaAvaliacao(imagemBase64, nomeArquivo = "foto") {
   } catch (erro) {
     statusEl.textContent = "Falha de comunicação ao avaliar a imagem.";
     mostrarToast("Falha de comunicação com o servidor.", "erro");
+  }
+}
+
+async function baixarDiagnosticoEtapa(endpoint, nomeArquivo, idBotao) {
+  if (!estadoAplicacao.ultimaImagemAvaliadaB64) {
+    mostrarToast("Carregue uma imagem antes de exportar o diagnóstico.", "aviso");
+    return;
+  }
+
+  const botao = document.getElementById(idBotao);
+  botao.disabled = true;
+
+  try {
+    const resposta = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        imagem_base64: estadoAplicacao.ultimaImagemAvaliadaB64,
+      }),
+    });
+
+    if (!resposta.ok) {
+      const dadosErro = await resposta.json();
+      mostrarToast(
+        dadosErro.detail || `Erro ao gerar ${nomeArquivo}.`,
+        "erro"
+      );
+      return;
+    }
+
+    const textoJson = await resposta.text();
+    const blob = new Blob([textoJson], { type: "application/json;charset=utf-8" });
+    const urlObjeto = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = urlObjeto;
+    link.download = nomeArquivo;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(urlObjeto);
+
+    mostrarToast(`Arquivo ${nomeArquivo} baixado!`, "sucesso");
+  } catch (erro) {
+    mostrarToast(`Falha ao baixar ${nomeArquivo}.`, "erro");
+  } finally {
+    botao.disabled = false;
   }
 }
 
@@ -1173,6 +1223,46 @@ document.addEventListener("DOMContentLoaded", () => {
         enviarImagemParaAvaliacao(estadoAplicacao.ultimaImagemAvaliadaB64);
       }
     });
+
+  document
+    .getElementById("botao-baixar-diagnostico-etapa1")
+    .addEventListener("click", () =>
+      baixarDiagnosticoEtapa(
+        "/api/diagnostico-etapa1",
+        "diagnostico_etapa1_python.json",
+        "botao-baixar-diagnostico-etapa1"
+      )
+    );
+
+  document
+    .getElementById("botao-baixar-diagnostico-etapa2")
+    .addEventListener("click", () =>
+      baixarDiagnosticoEtapa(
+        "/api/diagnostico-etapa2",
+        "diagnostico_etapa2_python.json",
+        "botao-baixar-diagnostico-etapa2"
+      )
+    );
+
+  document
+    .getElementById("botao-baixar-diagnostico-etapa3")
+    .addEventListener("click", () =>
+      baixarDiagnosticoEtapa(
+        "/api/diagnostico-etapa3",
+        "diagnostico_etapa3_python.json",
+        "botao-baixar-diagnostico-etapa3"
+      )
+    );
+
+  document
+    .getElementById("botao-baixar-diagnostico-etapa4")
+    .addEventListener("click", () =>
+      baixarDiagnosticoEtapa(
+        "/api/diagnostico-etapa4",
+        "diagnostico_etapa4_python.json",
+        "botao-baixar-diagnostico-etapa4"
+      )
+    );
 
   document.getElementById("filtro-status").addEventListener("change", (evento) => {
     estadoAplicacao.filtroStatus = evento.target.value;

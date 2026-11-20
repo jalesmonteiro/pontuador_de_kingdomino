@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import threading
@@ -12,6 +13,12 @@ raiz_projeto = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if raiz_projeto not in sys.path:
     sys.path.insert(0, raiz_projeto)
 
+from ferramentas.rotulador_web.servidor import (
+    _gerar_diagnostico_etapa1,
+    _gerar_diagnostico_etapa2,
+    _gerar_diagnostico_etapa3,
+    _gerar_diagnostico_etapa4,
+)
 from src.pipeline_pontuacao import executar_pipeline_visual_completo
 
 
@@ -129,6 +136,86 @@ class AplicativoAvaliadorKingdomino:
             cursor="hand2",
         )
         self.botao_escolher.pack(side=tk.LEFT, padx=(10, 0))
+
+        # Segunda Linha: Barra dedicada para exportação de diagnósticos JSON
+        barra_exportacao = tk.Frame(self.janela, bg="#162032", padx=16, pady=7)
+        barra_exportacao.pack(fill=tk.X, side=tk.TOP)
+
+        tk.Label(
+            barra_exportacao,
+            text="Exportar Diagnósticos JSON:",
+            font=("Segoe UI", 9, "bold"),
+            fg="#94a3b8",
+            bg="#162032",
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        self.botao_salvar_json = tk.Button(
+            barra_exportacao,
+            text="💾 Etapa 1 (Detector)",
+            command=self.salvar_json_diagnostico_etapa1,
+            bg="#334155",
+            fg="#f8fafc",
+            activebackground="#475569",
+            activeforeground="#ffffff",
+            font=("Segoe UI", 9, "bold"),
+            padx=12,
+            pady=5,
+            relief=tk.FLAT,
+            cursor="hand2",
+            state=tk.DISABLED,
+        )
+        self.botao_salvar_json.pack(side=tk.LEFT, padx=(0, 8))
+
+        self.botao_salvar_json2 = tk.Button(
+            barra_exportacao,
+            text="💾 Etapa 2 (Homografia)",
+            command=self.salvar_json_diagnostico_etapa2,
+            bg="#334155",
+            fg="#f8fafc",
+            activebackground="#475569",
+            activeforeground="#ffffff",
+            font=("Segoe UI", 9, "bold"),
+            padx=12,
+            pady=5,
+            relief=tk.FLAT,
+            cursor="hand2",
+            state=tk.DISABLED,
+        )
+        self.botao_salvar_json2.pack(side=tk.LEFT, padx=(0, 8))
+
+        self.botao_salvar_json3 = tk.Button(
+            barra_exportacao,
+            text="💾 Etapa 3 (Grade)",
+            command=self.salvar_json_diagnostico_etapa3,
+            bg="#334155",
+            fg="#f8fafc",
+            activebackground="#475569",
+            activeforeground="#ffffff",
+            font=("Segoe UI", 9, "bold"),
+            padx=12,
+            pady=5,
+            relief=tk.FLAT,
+            cursor="hand2",
+            state=tk.DISABLED,
+        )
+        self.botao_salvar_json3.pack(side=tk.LEFT, padx=(0, 8))
+
+        self.botao_salvar_json4 = tk.Button(
+            barra_exportacao,
+            text="💾 Etapa 4 (Classificador)",
+            command=self.salvar_json_diagnostico_etapa4,
+            bg="#334155",
+            fg="#f8fafc",
+            activebackground="#475569",
+            activeforeground="#ffffff",
+            font=("Segoe UI", 9, "bold"),
+            padx=12,
+            pady=5,
+            relief=tk.FLAT,
+            cursor="hand2",
+            state=tk.DISABLED,
+        )
+        self.botao_salvar_json4.pack(side=tk.LEFT, padx=(0, 8))
 
         # Área Central: Sequência de Etapas (topo) + Destaque e Relatório (baixo)
         corpo = tk.Frame(self.janela, bg="#0f172a", padx=14, pady=10)
@@ -287,6 +374,10 @@ class AplicativoAvaliadorKingdomino:
 
     def _exibir_resultado(self, caminho, saida, tempo_s):
         self.botao_escolher.configure(state=tk.NORMAL)
+        self.botao_salvar_json.configure(state=tk.NORMAL)
+        self.botao_salvar_json2.configure(state=tk.NORMAL)
+        self.botao_salvar_json3.configure(state=tk.NORMAL)
+        self.botao_salvar_json4.configure(state=tk.NORMAL)
         self.resultado_atual = saida
         self.referencias_imagens.clear()
 
@@ -356,6 +447,66 @@ class AplicativoAvaliadorKingdomino:
 
         # Exibe inicialmente a Etapa 0 ou a etapa clicada no visor esquerdo
         self.selecionar_etapa(1)
+
+    def salvar_json_diagnostico_etapa1(self):
+        self._salvar_json_diagnostico(
+            _gerar_diagnostico_etapa1,
+            "Salvar JSON Etapa 1 (Detector)",
+            "diagnostico_etapa1_python.json",
+        )
+
+    def salvar_json_diagnostico_etapa2(self):
+        self._salvar_json_diagnostico(
+            _gerar_diagnostico_etapa2,
+            "Salvar JSON Etapa 2 (Homografia)",
+            "diagnostico_etapa2_python.json",
+        )
+
+    def salvar_json_diagnostico_etapa3(self):
+        self._salvar_json_diagnostico(
+            _gerar_diagnostico_etapa3,
+            "Salvar JSON Etapa 3 (Grade)",
+            "diagnostico_etapa3_python.json",
+        )
+
+    def salvar_json_diagnostico_etapa4(self):
+        self._salvar_json_diagnostico(
+            _gerar_diagnostico_etapa4,
+            "Salvar JSON Etapa 4 (Classificador)",
+            "diagnostico_etapa4_python.json",
+        )
+
+    def _salvar_json_diagnostico(self, gerador_fn, titulo_dialogo, nome_padrao):
+        if not self.caminho_atual or not os.path.isfile(self.caminho_atual):
+            messagebox.showwarning(
+                "Nenhuma imagem",
+                "Escolha uma imagem antes de exportar o JSON de diagnóstico.",
+                parent=self.janela,
+            )
+            return
+
+        caminho_destino = filedialog.asksaveasfilename(
+            parent=self.janela,
+            title=titulo_dialogo,
+            initialdir=os.path.dirname(self.caminho_atual),
+            initialfile=nome_padrao,
+            defaultextension=".json",
+            filetypes=[("JSON", "*.json")],
+        )
+        if not caminho_destino:
+            return
+
+        try:
+            with open(self.caminho_atual, "rb") as arq:
+                bytes_img = arq.read()
+            diagnostico = gerador_fn(bytes_img)
+            with open(caminho_destino, "w", encoding="utf-8") as arq_saida:
+                json.dump(diagnostico, arq_saida, ensure_ascii=False, indent=2)
+            self.var_status.set(f"JSON salvo em: {caminho_destino}")
+        except Exception as erro:
+            messagebox.showerror(
+                "Erro ao gerar diagnóstico", str(erro), parent=self.janela
+            )
 
     def selecionar_etapa(self, indice):
         if not self.resultado_atual:
