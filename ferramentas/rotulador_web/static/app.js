@@ -9,6 +9,8 @@ const estadoAplicacao = {
   celulasInspecao: [],
   celulaEmEdicao: null,
   inspecaoCarregada: false,
+  ultimaImagemAvaliadaB64: null,
+  etapasAvaliacaoAtual: [],
 };
 
 const CODIGOS_COM_COROA = new Set(["f", "d", "o", "g", "p", "m"]);
@@ -84,14 +86,28 @@ function mostrarToast(mensagem, tipo = "sucesso", duracaoMs = 3500) {
 
 function alternarAbaPrincipal(nomeAba) {
   estadoAplicacao.abaAtiva = nomeAba;
-  const ehAjustes = nomeAba === "ajustes";
 
-  document.getElementById("visao-rotulagem").classList.toggle("oculto", ehAjustes);
-  document.getElementById("visao-ajustes").classList.toggle("oculto", !ehAjustes);
-  document.getElementById("botao-aba-rotulagem").classList.toggle("ativo", !ehAjustes);
-  document.getElementById("botao-aba-ajustes").classList.toggle("ativo", ehAjustes);
+  document
+    .getElementById("visao-rotulagem")
+    .classList.toggle("oculto", nomeAba !== "rotulagem");
+  document
+    .getElementById("visao-ajustes")
+    .classList.toggle("oculto", nomeAba !== "ajustes");
+  document
+    .getElementById("visao-avaliar")
+    .classList.toggle("oculto", nomeAba !== "avaliar");
 
-  if (ehAjustes && !estadoAplicacao.inspecaoCarregada) {
+  document
+    .getElementById("botao-aba-rotulagem")
+    .classList.toggle("ativo", nomeAba === "rotulagem");
+  document
+    .getElementById("botao-aba-ajustes")
+    .classList.toggle("ativo", nomeAba === "ajustes");
+  document
+    .getElementById("botao-aba-avaliar")
+    .classList.toggle("ativo", nomeAba === "avaliar");
+
+  if (nomeAba === "ajustes" && !estadoAplicacao.inspecaoCarregada) {
     carregarInspecaoClasses();
   }
 }
@@ -1008,6 +1024,88 @@ function abrirTabuleiroDaCelulaNaRotulagem() {
   renderizarTabuleiroAtual({ linha, coluna });
 }
 
+/* ==================== ABA 3: AVALIAR FOTO (PIPELINE COMPLETO) ==================== */
+
+function selecionarEtapaDestaqueWeb(indice) {
+  const etapas = estadoAplicacao.etapasAvaliacaoAtual || [];
+  if (indice < 0 || indice >= etapas.length) return;
+
+  const etapa = etapas[indice];
+  document.getElementById("titulo-etapa-destaque").textContent = etapa.titulo;
+  document.getElementById("descricao-etapa-destaque").textContent = etapa.descricao;
+  document.getElementById("imagem-etapa-destaque").src = etapa.imagem_base64;
+
+  document.querySelectorAll(".card-etapa-sequencia").forEach((card, idx) => {
+    card.classList.toggle("ativa", idx === indice);
+  });
+}
+
+async function enviarImagemParaAvaliacao(imagemBase64, nomeArquivo = "foto") {
+  const statusEl = document.getElementById("status-avaliacao-foto");
+  statusEl.textContent = `Processando '${nomeArquivo}' pelos modelos treinados...`;
+
+  const bonusHarmonia = document.getElementById("check-avaliar-harmonia").checked;
+  const bonusReinoMeio = document.getElementById("check-avaliar-reino-meio").checked;
+
+  try {
+    const resposta = await fetch("/api/avaliar-imagem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        imagem_base64: imagemBase64,
+        bonus_harmonia: bonusHarmonia,
+        bonus_reino_meio: bonusReinoMeio,
+      }),
+    });
+
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+      statusEl.textContent = `Erro: ${dados.detail || "falha ao processar imagem"}`;
+      mostrarToast(dados.detail || "Erro ao avaliar imagem.", "erro");
+      return;
+    }
+
+    const etapas = dados.etapas_visuais || [];
+    estadoAplicacao.etapasAvaliacaoAtual = etapas;
+
+    const grade = document.getElementById("grade-sequencia-etapas");
+    grade.innerHTML = "";
+
+    etapas.forEach((etapa, idx) => {
+      const card = document.createElement("div");
+      card.className = "card-etapa-sequencia";
+      card.innerHTML = `
+        <span class="titulo-card-etapa">${etapa.titulo}</span>
+        <img src="${etapa.imagem_base64}" alt="${etapa.titulo}" />
+      `;
+      card.addEventListener("click", () => selecionarEtapaDestaqueWeb(idx));
+      grade.appendChild(card);
+    });
+
+    const etapaFinal = etapas[etapas.length - 1];
+    if (etapaFinal) {
+      document.getElementById("imagem-final-avaliacao").src = etapaFinal.imagem_base64;
+    }
+
+    const res = dados.resultado_pontuacao;
+    const [lin, col] = dados.dimensoes_grade;
+    document.getElementById("badge-placar-final-avaliacao").textContent =
+      `${res.pontuacao_total} pts (Grade ${lin}x${col})`;
+    document.getElementById("relatorio-texto-avaliacao").textContent =
+      dados.relatorio_texto;
+
+    document.getElementById("painel-resultado-avaliacao").classList.remove("oculto");
+    selecionarEtapaDestaqueWeb(1);
+
+    statusEl.textContent =
+      `Concluído: Grade ${lin}x${col} — Pontuação Total: ${res.pontuacao_total} pts`;
+    mostrarToast(`Avaliação concluída: ${res.pontuacao_total} pts!`, "sucesso");
+  } catch (erro) {
+    statusEl.textContent = "Falha de comunicação ao avaliar a imagem.";
+    mostrarToast("Falha de comunicação com o servidor.", "erro");
+  }
+}
+
 async function carregarTabuleiros() {
   try {
     const resposta = await fetch("/api/tabuleiros");
@@ -1042,6 +1140,39 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("botao-aba-ajustes")
     .addEventListener("click", () => alternarAbaPrincipal("ajustes"));
+
+  document
+    .getElementById("botao-aba-avaliar")
+    .addEventListener("click", () => alternarAbaPrincipal("avaliar"));
+
+  document
+    .getElementById("entrada-arquivo-avaliar")
+    .addEventListener("change", (evento) => {
+      const arquivo = evento.target.files && evento.target.files[0];
+      if (!arquivo) return;
+      const leitor = new FileReader();
+      leitor.onload = () => {
+        estadoAplicacao.ultimaImagemAvaliadaB64 = leitor.result;
+        enviarImagemParaAvaliacao(leitor.result, arquivo.name);
+      };
+      leitor.readAsDataURL(arquivo);
+    });
+
+  document
+    .getElementById("check-avaliar-harmonia")
+    .addEventListener("change", () => {
+      if (estadoAplicacao.ultimaImagemAvaliadaB64) {
+        enviarImagemParaAvaliacao(estadoAplicacao.ultimaImagemAvaliadaB64);
+      }
+    });
+
+  document
+    .getElementById("check-avaliar-reino-meio")
+    .addEventListener("change", () => {
+      if (estadoAplicacao.ultimaImagemAvaliadaB64) {
+        enviarImagemParaAvaliacao(estadoAplicacao.ultimaImagemAvaliadaB64);
+      }
+    });
 
   document.getElementById("filtro-status").addEventListener("change", (evento) => {
     estadoAplicacao.filtroStatus = evento.target.value;

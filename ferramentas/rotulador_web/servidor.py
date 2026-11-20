@@ -1,9 +1,11 @@
+import base64
 import json
 import os
 import re
 import sys
 
 import cv2
+import numpy as np
 import torch
 from PIL import Image
 from fastapi import Body, FastAPI, HTTPException
@@ -23,6 +25,7 @@ from src.classificador import (
     CAMINHO_CLASSIFICADOR_PADRAO,
     carregar_classificador_celulas,
 )
+from src.pipeline_pontuacao import executar_pipeline_visual_completo
 
 PASTA_ESTATICOS = os.path.join(os.path.dirname(__file__), "static")
 PASTA_DADOS = os.path.join(raiz_projeto, "dados")
@@ -512,4 +515,65 @@ def acionar_compilacao():
     return {
         "mensagem": "Dataset compilado com sucesso.",
         "resumo": resumo,
+    }
+
+
+def _codificar_bgr_base64(imagem_bgr):
+    sucesso, buffer = cv2.imencode(
+        ".jpg", imagem_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 92]
+    )
+    if not sucesso:
+        return ""
+    b64 = base64.b64encode(buffer).decode("ascii")
+    return f"data:image/jpeg;base64,{b64}"
+
+
+@app.post("/api/avaliar-imagem")
+def avaliar_imagem_completa(dados=Body(...)):
+    imagem_b64 = str(dados.get("imagem_base64", "")).strip()
+    bonus_harmonia = bool(dados.get("bonus_harmonia", True))
+    bonus_reino_meio = bool(dados.get("bonus_reino_meio", True))
+
+    if not imagem_b64:
+        raise HTTPException(
+            status_code=400,
+            detail="Nenhuma imagem enviada para avaliação.",
+        )
+
+    if "," in imagem_b64:
+        imagem_b64 = imagem_b64.split(",", 1)[1]
+
+    try:
+        bytes_img = base64.b64decode(imagem_b64)
+        arr = np.frombuffer(bytes_img, dtype=np.uint8)
+        imagem_bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Falha ao decodificar a imagem enviada.")
+
+    if imagem_bgr is None:
+        raise HTTPException(status_code=400, detail="Formato de imagem inválido.")
+
+    try:
+        saida = executar_pipeline_visual_completo(
+            imagem_bgr,
+            bonus_harmonia=bonus_harmonia,
+            bonus_reino_meio=bonus_reino_meio,
+        )
+    except Exception as erro:
+        raise HTTPException(status_code=422, detail=str(erro))
+
+    etapas_serializadas = []
+    for etapa in saida["etapas_visuais"]:
+        etapas_serializadas.append({
+            "codigo": etapa["codigo"],
+            "titulo": etapa["titulo"],
+            "descricao": etapa["descricao"],
+            "imagem_base64": _codificar_bgr_base64(etapa["imagem"]),
+        })
+
+    return {
+        "dimensoes_grade": list(saida["dimensoes_grade"]),
+        "resultado_pontuacao": saida["resultado_pontuacao"],
+        "relatorio_texto": saida["relatorio_texto"],
+        "etapas_visuais": etapas_serializadas,
     }

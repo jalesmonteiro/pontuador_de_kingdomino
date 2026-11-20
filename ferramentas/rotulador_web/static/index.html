@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rotulador Visual de Tabuleiros — Kingdomino</title>
-  <link rel="stylesheet" href="/static/estilo.css?v=3" />
+  <link rel="stylesheet" href="/static/estilo.css?v=4" />
 </head>
 <body>
   <div id="recipiente-toasts" class="recipiente-toasts" aria-live="polite"></div>
@@ -35,6 +35,14 @@
       >
         Ajustes
         <span id="contador-alertas-aba" class="badge-aba oculto">0</span>
+      </button>
+      <button
+        id="botao-aba-avaliar"
+        type="button"
+        class="botao-aba"
+        data-aba="avaliar"
+      >
+        Avaliar Foto
       </button>
     </nav>
 
@@ -273,6 +281,67 @@
     <section id="recipiente-secoes-classes" class="recipiente-secoes-classes"></section>
   </main>
 
+  <!-- ABA 3: AVALIAR FOTO (PIPELINE COMPLETO PASSO A PASSO) -->
+  <main id="visao-avaliar" class="painel-ajustes-container oculto">
+    <section class="painel barra-filtros-ajustes">
+      <div class="grupo-filtros-ajustes">
+        <label class="botao botao-primario botao-upload-foto">
+          <span>📂 Escolher Foto no Computador...</span>
+          <input
+            type="file"
+            id="entrada-arquivo-avaliar"
+            accept="image/*"
+            class="oculto"
+          />
+        </label>
+
+        <label class="checkbox-filtro">
+          <input type="checkbox" id="check-avaliar-harmonia" checked />
+          <span>Bônus Harmonia (+5 pts)</span>
+        </label>
+
+        <label class="checkbox-filtro">
+          <input type="checkbox" id="check-avaliar-reino-meio" checked />
+          <span>Bônus Reino do Meio (+10 pts)</span>
+        </label>
+      </div>
+
+      <div class="acoes-topo-ajustes">
+        <span id="status-avaliacao-foto" class="resumo-contagem-ajustes">
+          Escolha uma imagem para executar o pipeline completo
+        </span>
+      </div>
+    </section>
+
+    <section id="painel-resultado-avaliacao" class="painel-resultado-avaliacao oculto">
+      <div class="painel bloco-sequencia-etapas">
+        <h3>Etapas do Pipeline em Sequência (clique para destacar)</h3>
+        <div id="grade-sequencia-etapas" class="grade-sequencia-etapas"></div>
+      </div>
+
+      <div class="grade-destaque-avaliacao">
+        <div class="painel">
+          <h3 id="titulo-etapa-destaque">Etapa Selecionada</h3>
+          <p id="descricao-etapa-destaque" class="subtitulo"></p>
+          <div class="area-imagem area-imagem-avaliacao">
+            <img id="imagem-etapa-destaque" src="" alt="Etapa em destaque" />
+          </div>
+        </div>
+
+        <div class="painel">
+          <div class="cabecalho-painel">
+            <h3>Imagem Final — Regiões Destacadas e Placar</h3>
+            <span id="badge-placar-final-avaliacao" class="etiqueta etiqueta-rotulado">0 pts</span>
+          </div>
+          <div class="area-imagem area-imagem-avaliacao">
+            <img id="imagem-final-avaliacao" src="" alt="Resultado final com pontuação" />
+          </div>
+          <pre id="relatorio-texto-avaliacao" class="caixa-relatorio-web"></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
   <!-- MODAL / POPOVER DE CORREÇÃO RÁPIDA DE CÉLULA -->
   <div id="modal-edicao-celula" class="fundo-modal oculto" role="dialog" aria-modal="true">
     <div class="caixa-modal-celula">
@@ -311,6 +380,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=3"></script>
+  <script src="/static/app.js?v=4"></script>
 </body>
 </html>
