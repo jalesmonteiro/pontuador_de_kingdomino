@@ -914,9 +914,13 @@ def _obter_sessao_onnx_classificador():
     if _CACHE_SESSAO_ONNX_CLASSIFICADOR is not None:
         return _CACHE_SESSAO_ONNX_CLASSIFICADOR
 
-    caminho_onnx = os.path.join(
+    caminho_onnx_fp32 = os.path.join(
+        raiz_projeto, "modelos", "mobile", "classificador_celulas_fp32.onnx"
+    )
+    caminho_onnx_fp16 = os.path.join(
         raiz_projeto, "modelos", "mobile", "classificador_celulas_fp16.onnx"
     )
+    caminho_onnx = caminho_onnx_fp32 if os.path.isfile(caminho_onnx_fp32) else caminho_onnx_fp16
     if not os.path.isfile(caminho_onnx):
         return None
 

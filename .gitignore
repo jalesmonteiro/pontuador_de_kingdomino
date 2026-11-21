@@ -50,6 +50,7 @@ modelos/mobile/*.onnx
 # Dados Brutos, Recortes e Imagens Intermediárias
 # Mantém versionados dados/rotulos_tabuleiros.json e dados/dataset_celulas/rotulos_celulas.csv
 dados/fotos_brutas/
+dados/fotos_brutas_02/
 dados/celulas_recortadas/
 dados/intermediarias/
 dados/tabuleiro_coco/

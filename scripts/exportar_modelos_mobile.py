@@ -46,7 +46,7 @@ from src.pontuacao import calcular_pontuacao_reino, construir_matriz
 
 PASTA_MODELOS_MOBILE = os.path.join(raiz_projeto, "modelos", "mobile")
 CAMINHO_ONNX_CLASSIFICADOR = os.path.join(
-    PASTA_MODELOS_MOBILE, "classificador_celulas_fp16.onnx"
+    PASTA_MODELOS_MOBILE, "classificador_celulas_fp32.onnx"
 )
 CAMINHO_ONNX_DETECTOR = os.path.join(
     PASTA_MODELOS_MOBILE, "detector_tabuleiro_rfdetr_fp16.onnx"
@@ -88,10 +88,10 @@ def _extrair_assinatura_tensores_onnx(grafo_onnx):
     )
 
 
-def exportar_classificador_fp16():
+def exportar_classificador_fp32():
     """
     Exporta o classificador multi-tarefa (terreno + coroas) para ONNX opset 17
-    com eixo de lote dinâmico e converte os pesos internos para FP16.
+    com eixo de lote dinâmico em precisão total FP32 (evitando overflow de Hardswish em ARM64).
     """
     os.makedirs(PASTA_MODELOS_MOBILE, exist_ok=True)
     artefato = carregar_classificador_celulas(
@@ -102,16 +102,13 @@ def exportar_classificador_fp16():
     modelo.eval()
     tamanho_img = int(artefato["tamanho_imagem"])
 
-    caminho_temp_fp32 = os.path.join(
-        PASTA_MODELOS_MOBILE, "_temp_classificador_fp32.onnx"
-    )
     entrada_ficticia = torch.randn(4, 3, tamanho_img, tamanho_img, dtype=torch.float32)
 
     with torch.no_grad():
         torch.onnx.export(
             modelo,
             entrada_ficticia,
-            caminho_temp_fp32,
+            CAMINHO_ONNX_CLASSIFICADOR,
             export_params=True,
             opset_version=17,
             do_constant_folding=True,
@@ -125,20 +122,12 @@ def exportar_classificador_fp16():
             dynamo=False,
         )
 
-    grafo_fp32 = onnx.load(caminho_temp_fp32)
-    grafo_fp16 = convert_float_to_float16(
-        grafo_fp32,
-        keep_io_types=True,
-    )
-    onnx.save(grafo_fp16, CAMINHO_ONNX_CLASSIFICADOR)
-
-    if os.path.isfile(caminho_temp_fp32):
-        os.remove(caminho_temp_fp32)
-
-    entradas, saidas = _extrair_assinatura_tensores_onnx(grafo_fp16)
+    grafo_fp32 = onnx.load(CAMINHO_ONNX_CLASSIFICADOR)
+    entradas, saidas = _extrair_assinatura_tensores_onnx(grafo_fp32)
     return {
         "caminho": CAMINHO_ONNX_CLASSIFICADOR,
         "arquitetura": getattr(modelo, "arquitetura", "mobilenet_v3_small"),
+        "precisao": "FP32",
         "tamanho_entrada": tamanho_img,
         "classes_terreno": list(artefato["classes_terreno"]),
         "classes_coroas": [int(c) for c in artefato["classes_coroas"]],
@@ -198,6 +187,7 @@ def salvar_metadados_flutter(info_detector, info_classificador):
         "detector": {
             "arquivo": os.path.basename(info_detector["caminho"]),
             "arquitetura": "RFDETRSegSmall",
+            "precisao": "FP16",
             "tamanho_entrada": info_detector["tamanho_entrada"],
             "formato_canais": "RGB",
             "escala_pixels": [0.0, 1.0],
@@ -224,6 +214,7 @@ def salvar_metadados_flutter(info_detector, info_classificador):
         "classificador": {
             "arquivo": os.path.basename(info_classificador["caminho"]),
             "arquitetura": info_classificador["arquitetura"],
+            "precisao": info_classificador.get("precisao", "FP32"),
             "tamanho_entrada": info_classificador["tamanho_entrada"],
             "formato_canais": "RGB",
             "escala_pixels": [0.0, 1.0],
@@ -575,8 +566,8 @@ def validar_paridade_pytorch_vs_onnx():
 
 def executar_exportacao_e_auditoria():
     inicio = time.time()
-    print("\n1. Exportando Classificador Multi-Tarefa para ONNX FP16...")
-    info_classificador = exportar_classificador_fp16()
+    print("\n1. Exportando Classificador Multi-Tarefa para ONNX FP32...")
+    info_classificador = exportar_classificador_fp32()
 
     print("2. Exportando Detector RF-DETR para ONNX FP16...")
     info_detector = exportar_detector_rfdetr_fp16()
@@ -600,7 +591,7 @@ def executar_exportacao_e_auditoria():
     print("AUDITORIA DE COMPRESSÃO DE MODELOS PARA MOBILE (FP32 .pth -> FP16 .onnx)")
     print("=" * 78)
     print(
-        f"{'MODELO':<34} | {'PYTORCH (.pth)':>14} | {'ONNX (FP16)':>13} | {'REDUÇÃO':>9}"
+        f"{'MODELO':<34} | {'PYTORCH (.pth)':>14} | {'ONNX MOBILE':>13} | {'REDUÇÃO':>9}"
     )
     print("-" * 78)
     print(

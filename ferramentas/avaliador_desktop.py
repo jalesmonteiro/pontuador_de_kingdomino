@@ -48,7 +48,7 @@ class AplicativoAvaliadorKingdomino:
     def __init__(self, janela):
         self.janela = janela
         self.janela.title("Avaliador Visual de Partidas — Kingdomino")
-        self.janela.geometry("1420x880")
+        self.janela.geometry("1600x900")
         self.janela.minsize(1100, 720)
         self.janela.configure(bg="#0f172a")
 

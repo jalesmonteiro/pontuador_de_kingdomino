@@ -5,6 +5,7 @@
   "detector": {
     "arquivo": "detector_tabuleiro_rfdetr_fp16.onnx",
     "arquitetura": "RFDETRSegSmall",
+    "precisao": "FP16",
     "tamanho_entrada": 648,
     "formato_canais": "RGB",
     "escala_pixels": [
@@ -83,8 +84,9 @@
     ]
   },
   "classificador": {
-    "arquivo": "classificador_celulas_fp16.onnx",
+    "arquivo": "classificador_celulas_fp32.onnx",
     "arquitetura": "mobilenet_v3_small",
+    "precisao": "FP32",
     "tamanho_entrada": 160,
     "formato_canais": "RGB",
     "escala_pixels": [
