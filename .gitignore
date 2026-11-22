@@ -40,10 +40,12 @@ mlruns/
 *.log
 
 # Pesos de Modelos Treinados (mantém a pasta modelos/ via .gitkeep e metadados JSON do mobile)
-modelos/*.pth
-modelos/*.pt
-modelos/*.onnx
-modelos/mobile/*.onnx
+*.pth
+*.pt
+*.onnx
+modelos/**/*.pth
+modelos/**/*.pt
+modelos/**/*.onnx
 !modelos/.gitkeep
 !modelos/mobile/metadados_modelos.json
 
