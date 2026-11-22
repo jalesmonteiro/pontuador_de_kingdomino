@@ -33,6 +33,8 @@ from src.classificador import (
 )
 from src.geometria import (
     CAMINHO_MODELO_PADRAO,
+    LIMIAR_CONFIANCA_PADRAO,
+    RESOLUCAO_DETECTOR_PADRAO,
     aplicar_homografia,
     calcular_linhas_corte_ajustadas,
     carregar_modelo_tabuleiro,
@@ -126,7 +128,7 @@ def exportar_classificador_fp32():
     entradas, saidas = _extrair_assinatura_tensores_onnx(grafo_fp32)
     return {
         "caminho": CAMINHO_ONNX_CLASSIFICADOR,
-        "arquitetura": getattr(modelo, "arquitetura", "mobilenet_v3_small"),
+        "arquitetura": getattr(modelo, "arquitetura", "efficientnet_b0"),
         "precisao": "FP32",
         "tamanho_entrada": tamanho_img,
         "classes_terreno": list(artefato["classes_terreno"]),
@@ -138,11 +140,12 @@ def exportar_classificador_fp32():
 
 def exportar_detector_rfdetr_fp16():
     """
-    Exporta o detector RFDETRSegSmall(resolution=648) para ONNX opset 17 com
-    entrada fixa (1, 3, 648, 648) e converte o grafo para FP16.
+    Exporta o detector RFDETRSegNano(resolution=564) para ONNX opset 17 com
+    entrada fixa (1, 3, 564, 564) e converte o grafo para FP16.
     """
     os.makedirs(PASTA_MODELOS_MOBILE, exist_ok=True)
     modelo_rfdetr = carregar_modelo_tabuleiro(CAMINHO_MODELO_PADRAO)
+    res_det = int(RESOLUCAO_DETECTOR_PADRAO)
 
     # Se o arquivo já foi exportado e já está em FP16 (< 85 MB), apenas carrega;
     # caso contrário exporta e converte para FP16
@@ -155,7 +158,7 @@ def exportar_detector_rfdetr_fp16():
             output_dir=PASTA_MODELOS_MOBILE,
             format="onnx",
             opset_version=17,
-            shape=(648, 648),
+            shape=(res_det, res_det),
             batch_size=1,
             fp16=True,
             verbose=False,
@@ -173,7 +176,7 @@ def exportar_detector_rfdetr_fp16():
     entradas, saidas = _extrair_assinatura_tensores_onnx(grafo_fp16)
     return {
         "caminho": CAMINHO_ONNX_DETECTOR,
-        "tamanho_entrada": 648,
+        "tamanho_entrada": res_det,
         "tensores_entrada": entradas,
         "tensores_saida": saidas,
     }
@@ -181,19 +184,19 @@ def exportar_detector_rfdetr_fp16():
 
 def salvar_metadados_flutter(info_detector, info_classificador):
     metadados = {
-        "versao_pipeline": "1.0.0",
+        "versao_pipeline": "2.0.0",
         "precisao_padrao": "FP16",
         "opset_onnx": 17,
         "detector": {
             "arquivo": os.path.basename(info_detector["caminho"]),
-            "arquitetura": "RFDETRSegSmall",
+            "arquitetura": "RFDETRSegNano",
             "precisao": "FP16",
             "tamanho_entrada": info_detector["tamanho_entrada"],
             "formato_canais": "RGB",
             "escala_pixels": [0.0, 1.0],
             "media_normalizacao_rgb": MEDIA_IMAGENET,
             "desvio_normalizacao_rgb": DESVIO_IMAGENET,
-            "limiar_confianca": 0.5,
+            "limiar_confianca": LIMIAR_CONFIANCA_PADRAO,
             "area_minima_relativa": 0.02,
             "indice_classe_tabuleiro": 0,
             "formato_caixa_saida": "cxcywh_normalizado",
@@ -237,20 +240,27 @@ def salvar_metadados_flutter(info_detector, info_classificador):
 def detectar_reino_principal_onnx(
     imagem_bgr,
     sessao_detector,
-    limiar_confianca=0.5,
+    limiar_confianca=LIMIAR_CONFIANCA_PADRAO,
     area_minima_relativa=0.02,
 ):
     """
-    Executa a inferência da Etapa 0 e Etapa 1 usando exclusivamente o modelo ONNX FP16.
+    Executa a inferência da Etapa 0 e Etapa 1 usando exclusivamente o modelo ONNX.
     """
     altura_img, largura_img = imagem_bgr.shape[:2]
     area_total_img = float(altura_img * largura_img)
     area_minima = area_total_img * area_minima_relativa
 
+    formato_in = sessao_detector.get_inputs()[0].shape
+    res_onnx = (
+        int(formato_in[2])
+        if len(formato_in) >= 4 and isinstance(formato_in[2], int)
+        else int(RESOLUCAO_DETECTOR_PADRAO)
+    )
+
     # Usa PIL bilinear para manter exatamente o mesmo redimensionamento de torchvision
     img_pil = Image.fromarray(cv2.cvtColor(imagem_bgr, cv2.COLOR_BGR2RGB))
     img_redim = np.asarray(
-        img_pil.resize((648, 648), Image.Resampling.BILINEAR), dtype=np.float32
+        img_pil.resize((res_onnx, res_onnx), Image.Resampling.BILINEAR), dtype=np.float32
     ) / 255.0
     media = np.array(MEDIA_IMAGENET, dtype=np.float32)
     desvio = np.array(DESVIO_IMAGENET, dtype=np.float32)

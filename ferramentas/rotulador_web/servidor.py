@@ -32,6 +32,8 @@ from src.classificador import (
     criar_transformacao_inferencia,
 )
 from src.geometria import (
+    LIMIAR_CONFIANCA_PADRAO,
+    RESOLUCAO_DETECTOR_PADRAO,
     aplicar_homografia,
     calcular_linhas_corte_ajustadas,
     carregar_modelo_tabuleiro,
@@ -49,6 +51,7 @@ PASTA_GRADES = os.path.join(PASTA_INTERMEDIARIAS, "03_grade_cortes")
 PASTA_HOMOGRAFIAS = os.path.join(PASTA_INTERMEDIARIAS, "02_homografia")
 PASTA_CELULAS = os.path.join(PASTA_DADOS, "celulas_recortadas")
 CAMINHO_ROTULOS = os.path.join(PASTA_DADOS, "rotulos_tabuleiros.json")
+CAMINHO_MANIFESTO_V2 = os.path.join(PASTA_DADOS, "manifesto_dataset_v2.json")
 
 os.makedirs(PASTA_ESTATICOS, exist_ok=True)
 os.makedirs(PASTA_GRADES, exist_ok=True)
@@ -78,6 +81,61 @@ def _salvar_rotulos(rotulos):
     os.makedirs(os.path.dirname(CAMINHO_ROTULOS), exist_ok=True)
     with open(CAMINHO_ROTULOS, "w", encoding="utf-8") as arquivo:
         json.dump(rotulos, arquivo, ensure_ascii=False, indent=2)
+
+
+def _carregar_manifesto_v2():
+    if not os.path.isfile(CAMINHO_MANIFESTO_V2):
+        return None
+    try:
+        with open(CAMINHO_MANIFESTO_V2, "r", encoding="utf-8") as arq:
+            dados = json.load(arq)
+        return dados if isinstance(dados, dict) else None
+    except Exception:
+        return None
+
+
+def _marcar_tabuleiro_revisado_no_manifesto(prefixo, linhas_normalizadas):
+    manifesto = _carregar_manifesto_v2()
+    if not manifesto or "tabuleiros" not in manifesto:
+        return
+    tabuleiros_m = manifesto["tabuleiros"]
+    if prefixo not in tabuleiros_m:
+        return
+
+    reg = tabuleiros_m[prefixo]
+    reg["revisado"] = True
+    reg["linhas_rotulos"] = linhas_normalizadas
+
+    if "celulas" in reg and isinstance(reg["celulas"], list):
+        for cel in reg["celulas"]:
+            r = int(cel.get("linha", -1))
+            c = int(cel.get("coluna", -1))
+            if 0 <= r < len(linhas_normalizadas):
+                cods = [x.strip().lower() for x in str(linhas_normalizadas[r]).split(",")]
+                if 0 <= c < len(cods):
+                    try:
+                        cod_norm, terr, cor = interpretar_codigo_celula(cods[c])
+                        cel["codigo"] = cod_norm
+                        cel["terreno"] = terr
+                        cel["coroas"] = cor
+                    except ValueError:
+                        pass
+            cel["revisado"] = True
+
+    if "resumo" in manifesto and isinstance(manifesto["resumo"], dict):
+        revisados = sum(
+            1 for v in tabuleiros_m.values()
+            if v.get("status_deteccao") == "sucesso" and v.get("revisado")
+        )
+        pendentes = sum(
+            1 for v in tabuleiros_m.values()
+            if v.get("status_deteccao") == "sucesso" and not v.get("revisado")
+        )
+        manifesto["resumo"]["revisados_manualmente"] = revisados
+        manifesto["resumo"]["pendentes_revisao_pre_rotulados"] = pendentes
+
+    with open(CAMINHO_MANIFESTO_V2, "w", encoding="utf-8") as arq:
+        json.dump(manifesto, arq, ensure_ascii=False, indent=2)
 
 
 def _indexar_dimensoes_por_celulas():
@@ -236,6 +294,8 @@ def listar_tabuleiros():
         nome for nome in os.listdir(PASTA_GRADES) if nome.endswith(SUFIXO_GRADE)
     )
     rotulos = _carregar_rotulos()
+    manifesto = _carregar_manifesto_v2()
+    tabuleiros_m = manifesto.get("tabuleiros", {}) if manifesto else {}
     indice_celulas = _indexar_dimensoes_por_celulas()
 
     tabuleiros = []
@@ -246,14 +306,23 @@ def listar_tabuleiros():
         linhas, colunas = _inferir_dimensao_tabuleiro(prefixo, indice_celulas)
 
         entrada_salva = rotulos.get(prefixo)
-        esta_rotulado = isinstance(entrada_salva, list) and len(entrada_salva) > 0
-        if esta_rotulado:
-            total_rotulados += 1
+        possui_matriz = isinstance(entrada_salva, list) and len(entrada_salva) > 0
+        if possui_matriz:
             matriz = _converter_linhas_para_matriz(entrada_salva)
             linhas = len(matriz)
             colunas = len(matriz[0]) if linhas > 0 else colunas
         else:
             matriz = None
+
+        # Se existir no manifesto_dataset_v2 com revisado=False, permanece como 'pendente'
+        # mas envia a matriz pré-rotulada para revisão rápida na interface web
+        if prefixo in tabuleiros_m:
+            esta_rotulado = bool(tabuleiros_m[prefixo].get("revisado", False)) and possui_matriz
+        else:
+            esta_rotulado = possui_matriz
+
+        if esta_rotulado:
+            total_rotulados += 1
 
         tabuleiros.append({
             "prefixo": prefixo,
@@ -325,16 +394,23 @@ def salvar_rotulos_tabuleiro(prefixo, dados=Body(...)):
     rotulos = _carregar_rotulos()
     rotulos[prefixo] = linhas_normalizadas
     _salvar_rotulos(rotulos)
+    _marcar_tabuleiro_revisado_no_manifesto(prefixo, linhas_normalizadas)
+
+    manifesto = _carregar_manifesto_v2()
+    tabuleiros_m = manifesto.get("tabuleiros", {}) if manifesto else {}
 
     arquivos_grades = [
         nome for nome in os.listdir(PASTA_GRADES) if nome.endswith(SUFIXO_GRADE)
     ]
-    total_rotulados = sum(
-        1
-        for nome in arquivos_grades
-        if isinstance(rotulos.get(nome[: -len(SUFIXO_GRADE)]), list)
-        and len(rotulos.get(nome[: -len(SUFIXO_GRADE)])) > 0
-    )
+    total_rotulados = 0
+    for nome in arquivos_grades:
+        pref = nome[: -len(SUFIXO_GRADE)]
+        possui_m = isinstance(rotulos.get(pref), list) and len(rotulos.get(pref)) > 0
+        if pref in tabuleiros_m:
+            if bool(tabuleiros_m[pref].get("revisado", False)) and possui_m:
+                total_rotulados += 1
+        elif possui_m:
+            total_rotulados += 1
 
     return {
         "mensagem": f"Tabuleiro '{prefixo}' salvo com sucesso.",
@@ -599,9 +675,12 @@ def _gerar_diagnostico_etapa1(bytes_img):
     img_pil = ImageOps.exif_transpose(img_pil).convert("RGB")
     largura_orig, altura_orig = img_pil.size
 
+    resolucao_det = int(RESOLUCAO_DETECTOR_PADRAO)
+    meio_det = resolucao_det // 2
+
     img_redim = (
         np.asarray(
-            img_pil.resize((648, 648), Image.Resampling.BILINEAR),
+            img_pil.resize((resolucao_det, resolucao_det), Image.Resampling.BILINEAR),
             dtype=np.float32,
         )
         / 255.0
@@ -629,8 +708,8 @@ def _gerar_diagnostico_etapa1(bytes_img):
     areas_top5 = []
     proximidades_top5 = []
     for idx in indices_top5:
-        mascara_162 = pred_masks[idx]
-        area_rel = float(np.mean(mascara_162 > 0.0))
+        mascara_141 = pred_masks[idx]
+        area_rel = float(np.mean(mascara_141 > 0.0))
         areas_top5.append(area_rel)
 
         cx_n = float(pred_boxes[idx][0])
@@ -652,10 +731,10 @@ def _gerar_diagnostico_etapa1(bytes_img):
             "score_ranqueamento": round(float(score_ranq), 6),
         })
 
-    # Seleciona a detecção escolhida pelo maior score entre as candidatas válidas (>= 0.5 e área >= 2%)
+    # Seleciona a detecção escolhida pelo maior score entre as candidatas válidas (>= 0.35 e área >= 2%)
     candidatas_validas = [
         d for d in top_5_deteccoes
-        if d["confianca_sigmoid"] >= 0.5 and d["area_relativa_mascara"] >= 0.02
+        if d["confianca_sigmoid"] >= LIMIAR_CONFIANCA_PADRAO and d["area_relativa_mascara"] >= 0.02
     ]
     if candidatas_validas:
         escolhida_meta = max(candidatas_validas, key=lambda d: d["score_ranqueamento"])
@@ -664,6 +743,14 @@ def _gerar_diagnostico_etapa1(bytes_img):
 
     idx_escolhido = escolhida_meta["indice_query"]
     mascara_escolhida = pred_masks[idx_escolhido]
+    linha_central_idx = int(mascara_escolhida.shape[0]) // 2
+
+    val_min = round(float(np.min(mascara_escolhida)), 6)
+    val_max = round(float(np.max(mascara_escolhida)), 6)
+    val_pos = int(np.sum(mascara_escolhida > 0.0))
+    linha_central = [
+        round(float(v), 4) for v in mascara_escolhida[linha_central_idx, :]
+    ]
 
     return {
         "dimensoes_imagem_original": [int(largura_orig), int(altura_orig)],
@@ -674,18 +761,20 @@ def _gerar_diagnostico_etapa1(bytes_img):
             "media": round(float(np.mean(tensor_np)), 6),
             "desvio": round(float(np.std(tensor_np)), 6),
             "pixel_0_0_rgb": [round(float(v), 6) for v in tensor_np[0, :, 0, 0]],
-            "pixel_central_rgb": [round(float(v), 6) for v in tensor_np[0, :, 324, 324]],
+            "pixel_central_rgb": [round(float(v), 6) for v in tensor_np[0, :, meio_det, meio_det]],
         },
         "top_5_deteccoes": top_5_deteccoes,
         "deteccao_escolhida": {
             "confianca_sigmoid": escolhida_meta["confianca_sigmoid"],
             "caixa_cx_cy_w_h": escolhida_meta["caixa_cx_cy_w_h"],
-            "mascara_162_min": round(float(np.min(mascara_escolhida)), 6),
-            "mascara_162_max": round(float(np.max(mascara_escolhida)), 6),
-            "mascara_162_positivos": int(np.sum(mascara_escolhida > 0.0)),
-            "mascara_162_linha_central": [
-                round(float(v), 4) for v in mascara_escolhida[81, :]
-            ],
+            "mascara_141_min": val_min,
+            "mascara_141_max": val_max,
+            "mascara_141_positivos": val_pos,
+            "mascara_141_linha_central": linha_central,
+            "mascara_162_min": val_min,
+            "mascara_162_max": val_max,
+            "mascara_162_positivos": val_pos,
+            "mascara_162_linha_central": linha_central,
         },
     }
 
@@ -985,26 +1074,16 @@ def _gerar_diagnostico_etapa4(bytes_img):
 
     tensor_np = torch.stack(tensores_celulas, dim=0).cpu().numpy().astype(np.float32)
 
-    sessao_onnx = _obter_sessao_onnx_classificador()
-    if sessao_onnx is not None:
-        nome_entrada = sessao_onnx.get_inputs()[0].name
-        nomes_saidas_onnx = [saida.name for saida in sessao_onnx.get_outputs()]
-        logits_terreno, logits_coroas = sessao_onnx.run(
-            None, {nome_entrada: tensor_np}
-        )
-        classes_terreno = CLASSES_TERRENO
-        classes_coroas = CLASSES_COROAS
-    else:
-        artefato = carregar_classificador_celulas(CAMINHO_CLASSIFICADOR_PADRAO)
-        nomes_saidas_onnx = ["logits_terreno", "logits_coroas"]
-        rede = artefato["modelo"]
-        disp = artefato["dispositivo"]
-        with torch.no_grad():
-            lt, lc = rede(torch.from_numpy(tensor_np).to(disp))
-            logits_terreno = lt.cpu().numpy()
-            logits_coroas = lc.cpu().numpy()
-        classes_terreno = artefato["classes_terreno"]
-        classes_coroas = artefato["classes_coroas"]
+    artefato = carregar_classificador_celulas(CAMINHO_CLASSIFICADOR_PADRAO)
+    nomes_saidas_onnx = ["logits_terreno", "logits_coroas"]
+    rede = artefato["modelo"]
+    disp = artefato["dispositivo"]
+    with torch.no_grad():
+        lt, lc = rede(torch.from_numpy(tensor_np).to(disp))
+        logits_terreno = lt.cpu().numpy()
+        logits_coroas = lc.cpu().numpy()
+    classes_terreno = artefato["classes_terreno"]
+    classes_coroas = artefato["classes_coroas"]
 
     matriz_terrenos = [["vazio" for _ in range(colunas)] for _ in range(linhas)]
     matriz_coroas = [[0 for _ in range(colunas)] for _ in range(linhas)]

@@ -1,0 +1,3324 @@
+{
+  "resumo_auditoria": {
+    "total_imagens_base": 85,
+    "total_tabuleiros_avaliados_classificador": 82,
+    "total_tabuleiros_sem_rotulo_lote_01": 3,
+    "total_celulas_avaliadas": 2240,
+    "total_celulas_com_erro": 37,
+    "erros_conjunto_validacao": 13,
+    "erros_conjunto_treino": 24,
+    "total_tabuleiros_com_divergencia": 26,
+    "distribuicao_por_tipo_divergencia": {
+      "terreno": 19,
+      "coroas": 12,
+      "terreno_e_coroas": 6
+    },
+    "distribuicao_por_motivo_provavel": {
+      "vizinha_ao_castelo": 17,
+      "erro_contagem_coroa": 5,
+      "confusao_terreno": 3,
+      "confusao_terreno_e_coroa": 4,
+      "confusao_com_fundo_vazio": 8
+    }
+  },
+  "tabuleiros_sem_rotulo_ou_falha_deteccao": [
+    {
+      "prefixo": "1733092793-285376_w1000",
+      "arquivo_origem": "1733092793-285376_w1000.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "detectado_em_inferencia": true,
+      "status_manifesto": "descartado_manual_x",
+      "motivo": "Tabuleiro com todas as células marcadas como 'x' (descartado na revisão manual)."
+    },
+    {
+      "prefixo": "pic3466853_webp",
+      "arquivo_origem": "pic3466853_webp.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "detectado_em_inferencia": false,
+      "status_manifesto": "falha_deteccao",
+      "motivo": "Tabuleiro do Lote 01 sem rotulagem de células (falha de detecção/oclusão severa na preparação original)."
+    },
+    {
+      "prefixo": "pic3683619_webp",
+      "arquivo_origem": "pic3683619_webp.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "detectado_em_inferencia": true,
+      "status_manifesto": "falha_deteccao",
+      "motivo": "Tabuleiro do Lote 01 sem rotulagem de células (falha de detecção/oclusão severa na preparação original)."
+    }
+  ],
+  "tabuleiros_com_divergencia": [
+    {
+      "prefixo": "089f4_130364_jpg",
+      "arquivo_origem": "089f4_130364_jpg.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        6
+      ],
+      "total_celulas": 29,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          0,
+          5
+        ]
+      ]
+    },
+    {
+      "prefixo": "0a120_111852_jpg",
+      "arquivo_origem": "0a120_111852_jpg.jpg",
+      "lote": "lote_01",
+      "conjunto": "validacao",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "1333010_64046572_b",
+      "arquivo_origem": "1333010_64046572_b.jpeg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "1401e_118235_jpg",
+      "arquivo_origem": "1401e_118235_jpg.jpg",
+      "lote": "lote_01",
+      "conjunto": "validacao",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 24,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "52893_149608_jpeg",
+      "arquivo_origem": "52893_149608_jpeg.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 24,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "5fb647d7",
+      "arquivo_origem": "5fb647d7.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "DERJXjzV0AEU5rQ",
+      "arquivo_origem": "DERJXjzV0AEU5rQ.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 2,
+      "posicoes_com_erro": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          4
+        ]
+      ]
+    },
+    {
+      "prefixo": "ba18885158c5206547066ca5dc5c9ee3-scaled",
+      "arquivo_origem": "ba18885158c5206547066ca5dc5c9ee3-scaled.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 3,
+      "posicoes_com_erro": [
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          4,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "boardlife_1790867997390_1291_1000",
+      "arquivo_origem": "boardlife_1790867997390_1291_1000.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          3,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370018416_3301_1000",
+      "arquivo_origem": "boardlife_1794370018416_3301_1000.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        7,
+        7
+      ],
+      "total_celulas": 49,
+      "qtd_erros": 2,
+      "posicoes_com_erro": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370024309_5598_1000",
+      "arquivo_origem": "boardlife_1794370024309_5598_1000.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "dimensao_grade": [
+        7,
+        7
+      ],
+      "total_celulas": 49,
+      "qtd_erros": 3,
+      "posicoes_com_erro": [
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370027431_2563_1000",
+      "arquivo_origem": "boardlife_1794370027431_2563_1000.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        7,
+        7
+      ],
+      "total_celulas": 49,
+      "qtd_erros": 2,
+      "posicoes_com_erro": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "prefixo": "d3d2c_177522_jpg",
+      "arquivo_origem": "d3d2c_177522_jpg.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 22,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          0,
+          4
+        ]
+      ]
+    },
+    {
+      "prefixo": "e1b07_150241_jpg",
+      "arquivo_origem": "e1b07_150241_jpg.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        7,
+        7
+      ],
+      "total_celulas": 42,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "prefixo": "images",
+      "arquivo_origem": "images.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 2,
+      "posicoes_com_erro": [
+        [
+          3,
+          1
+        ],
+        [
+          3,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "img_9027",
+      "arquivo_origem": "img_9027.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "p3",
+      "arquivo_origem": "p3.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "p4",
+      "arquivo_origem": "p4.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 22,
+      "qtd_erros": 2,
+      "posicoes_com_erro": [
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "prefixo": "p5",
+      "arquivo_origem": "p5.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 24,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "p7",
+      "arquivo_origem": "p7.webp",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 23,
+      "qtd_erros": 2,
+      "posicoes_com_erro": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "prefixo": "p9",
+      "arquivo_origem": "p9.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          1,
+          4
+        ]
+      ]
+    },
+    {
+      "prefixo": "photo4",
+      "arquivo_origem": "photo4.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 2,
+      "posicoes_com_erro": [
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ]
+      ]
+    },
+    {
+      "prefixo": "pic3554840",
+      "arquivo_origem": "pic3554840.webp",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        7,
+        7
+      ],
+      "total_celulas": 49,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          6,
+          4
+        ]
+      ]
+    },
+    {
+      "prefixo": "pic3711927_webp",
+      "arquivo_origem": "pic3711927_webp.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 24,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    {
+      "prefixo": "pic3878199_webp",
+      "arquivo_origem": "pic3878199_webp.jpg",
+      "lote": "lote_01",
+      "conjunto": "validacao",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    {
+      "prefixo": "post_image_30f23a57-86ba-4ae4-a79e-415a940f137f",
+      "arquivo_origem": "post_image_30f23a57-86ba-4ae4-a79e-415a940f137f.jpeg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "dimensao_grade": [
+        5,
+        5
+      ],
+      "total_celulas": 25,
+      "qtd_erros": 1,
+      "posicoes_com_erro": [
+        [
+          1,
+          1
+        ]
+      ]
+    }
+  ],
+  "erros_detalhados": [
+    {
+      "prefixo": "0a120_111852_jpg",
+      "arquivo_origem": "0a120_111852_jpg.jpg",
+      "arquivo_celula": "0a120_111852_jpg_L1_C2.jpg",
+      "lote": "lote_01",
+      "conjunto": "validacao",
+      "posicao": [
+        1,
+        2
+      ],
+      "codigo_real": "m2",
+      "terreno_real": "mineracao",
+      "coroas_reais": 2,
+      "codigo_predito": "m3",
+      "terreno_predito": "mineracao",
+      "coroas_preditas": 3,
+      "confianca_terreno": 0.9995,
+      "confianca_coroas": 0.4742,
+      "confianca_combinada": 0.4742,
+      "probabilidades_terreno": {
+        "castelo": 0.0,
+        "deserto": 0.0,
+        "floresta": 0.0003,
+        "mineracao": 0.9995,
+        "oceano": 0.0001,
+        "pantano": 0.0001,
+        "planicie": 0.0,
+        "vazio": 0.0
+      },
+      "probabilidades_coroas": {
+        "0": 0.0147,
+        "1": 0.0541,
+        "2": 0.457,
+        "3": 0.4742
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "m2",
+        "terreno": "mineracao",
+        "coroas": 2
+      },
+      "valor_predito": {
+        "codigo": "m3",
+        "terreno": "mineracao",
+        "coroas": 3
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0,
+          "deserto": 0.0,
+          "floresta": 0.0003,
+          "mineracao": 0.9995,
+          "oceano": 0.0001,
+          "pantano": 0.0001,
+          "planicie": 0.0,
+          "vazio": 0.0
+        },
+        "coroas": {
+          "0": 0.0147,
+          "1": 0.0541,
+          "2": 0.457,
+          "3": 0.4742
+        },
+        "prob_terreno_real": 0.9995,
+        "prob_coroas_real": 0.457
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "1401e_118235_jpg",
+      "arquivo_origem": "1401e_118235_jpg.jpg",
+      "arquivo_celula": "1401e_118235_jpg_L1_C2.jpg",
+      "lote": "lote_01",
+      "conjunto": "validacao",
+      "posicao": [
+        1,
+        2
+      ],
+      "codigo_real": "f",
+      "terreno_real": "floresta",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.9866,
+      "confianca_coroas": 0.997,
+      "confianca_combinada": 0.9866,
+      "probabilidades_terreno": {
+        "castelo": 0.9866,
+        "deserto": 0.0008,
+        "floresta": 0.0018,
+        "mineracao": 0.0006,
+        "oceano": 0.0003,
+        "pantano": 0.0037,
+        "planicie": 0.0043,
+        "vazio": 0.002
+      },
+      "probabilidades_coroas": {
+        "0": 0.997,
+        "1": 0.002,
+        "2": 0.0005,
+        "3": 0.0005
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "f",
+        "terreno": "floresta",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.9866,
+          "deserto": 0.0008,
+          "floresta": 0.0018,
+          "mineracao": 0.0006,
+          "oceano": 0.0003,
+          "pantano": 0.0037,
+          "planicie": 0.0043,
+          "vazio": 0.002
+        },
+        "coroas": {
+          "0": 0.997,
+          "1": 0.002,
+          "2": 0.0005,
+          "3": 0.0005
+        },
+        "prob_terreno_real": 0.0018,
+        "prob_coroas_real": 0.997
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "boardlife_1790867997390_1291_1000",
+      "arquivo_origem": "boardlife_1790867997390_1291_1000.jpg",
+      "arquivo_celula": "boardlife_1790867997390_1291_1000_L3_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        3,
+        2
+      ],
+      "codigo_real": "g2",
+      "terreno_real": "planicie",
+      "coroas_reais": 2,
+      "codigo_predito": "g1",
+      "terreno_predito": "planicie",
+      "coroas_preditas": 1,
+      "confianca_terreno": 0.9965,
+      "confianca_coroas": 0.6244,
+      "confianca_combinada": 0.6244,
+      "probabilidades_terreno": {
+        "castelo": 0.0001,
+        "deserto": 0.0001,
+        "floresta": 0.0031,
+        "mineracao": 0.0001,
+        "oceano": 0.0,
+        "pantano": 0.0001,
+        "planicie": 0.9965,
+        "vazio": 0.0
+      },
+      "probabilidades_coroas": {
+        "0": 0.0029,
+        "1": 0.6244,
+        "2": 0.3725,
+        "3": 0.0002
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "g2",
+        "terreno": "planicie",
+        "coroas": 2
+      },
+      "valor_predito": {
+        "codigo": "g1",
+        "terreno": "planicie",
+        "coroas": 1
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0001,
+          "deserto": 0.0001,
+          "floresta": 0.0031,
+          "mineracao": 0.0001,
+          "oceano": 0.0,
+          "pantano": 0.0001,
+          "planicie": 0.9965,
+          "vazio": 0.0
+        },
+        "coroas": {
+          "0": 0.0029,
+          "1": 0.6244,
+          "2": 0.3725,
+          "3": 0.0002
+        },
+        "prob_terreno_real": 0.9965,
+        "prob_coroas_real": 0.3725
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370024309_5598_1000",
+      "arquivo_origem": "boardlife_1794370024309_5598_1000.jpg",
+      "arquivo_celula": "boardlife_1794370024309_5598_1000_L1_C1.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        1,
+        1
+      ],
+      "codigo_real": "p1",
+      "terreno_real": "pantano",
+      "coroas_reais": 1,
+      "codigo_predito": "p2",
+      "terreno_predito": "pantano",
+      "coroas_preditas": 2,
+      "confianca_terreno": 0.9997,
+      "confianca_coroas": 0.6175,
+      "confianca_combinada": 0.6175,
+      "probabilidades_terreno": {
+        "castelo": 0.0002,
+        "deserto": 0.0001,
+        "floresta": 0.0,
+        "mineracao": 0.0,
+        "oceano": 0.0,
+        "pantano": 0.9997,
+        "planicie": 0.0001,
+        "vazio": 0.0
+      },
+      "probabilidades_coroas": {
+        "0": 0.056,
+        "1": 0.3258,
+        "2": 0.6175,
+        "3": 0.0008
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "p1",
+        "terreno": "pantano",
+        "coroas": 1
+      },
+      "valor_predito": {
+        "codigo": "p2",
+        "terreno": "pantano",
+        "coroas": 2
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0002,
+          "deserto": 0.0001,
+          "floresta": 0.0,
+          "mineracao": 0.0,
+          "oceano": 0.0,
+          "pantano": 0.9997,
+          "planicie": 0.0001,
+          "vazio": 0.0
+        },
+        "coroas": {
+          "0": 0.056,
+          "1": 0.3258,
+          "2": 0.6175,
+          "3": 0.0008
+        },
+        "prob_terreno_real": 0.9997,
+        "prob_coroas_real": 0.3258
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "erro_contagem_coroa",
+      "fatores_associados": [
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370024309_5598_1000",
+      "arquivo_origem": "boardlife_1794370024309_5598_1000.jpg",
+      "arquivo_celula": "boardlife_1794370024309_5598_1000_L3_C5.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        3,
+        5
+      ],
+      "codigo_real": "o",
+      "terreno_real": "oceano",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.3944,
+      "confianca_coroas": 0.6975,
+      "confianca_combinada": 0.3944,
+      "probabilidades_terreno": {
+        "castelo": 0.3944,
+        "deserto": 0.0107,
+        "floresta": 0.2541,
+        "mineracao": 0.1505,
+        "oceano": 0.0275,
+        "pantano": 0.0843,
+        "planicie": 0.0184,
+        "vazio": 0.0601
+      },
+      "probabilidades_coroas": {
+        "0": 0.6975,
+        "1": 0.1839,
+        "2": 0.0504,
+        "3": 0.0682
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "o",
+        "terreno": "oceano",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.3944,
+          "deserto": 0.0107,
+          "floresta": 0.2541,
+          "mineracao": 0.1505,
+          "oceano": 0.0275,
+          "pantano": 0.0843,
+          "planicie": 0.0184,
+          "vazio": 0.0601
+        },
+        "coroas": {
+          "0": 0.6975,
+          "1": 0.1839,
+          "2": 0.0504,
+          "3": 0.0682
+        },
+        "prob_terreno_real": 0.0275,
+        "prob_coroas_real": 0.6975
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_terreno",
+      "fatores_associados": [
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370024309_5598_1000",
+      "arquivo_origem": "boardlife_1794370024309_5598_1000.jpg",
+      "arquivo_celula": "boardlife_1794370024309_5598_1000_L4_C5.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        4,
+        5
+      ],
+      "codigo_real": "g1",
+      "terreno_real": "planicie",
+      "coroas_reais": 1,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.4523,
+      "confianca_coroas": 0.7536,
+      "confianca_combinada": 0.4523,
+      "probabilidades_terreno": {
+        "castelo": 0.4523,
+        "deserto": 0.0162,
+        "floresta": 0.2563,
+        "mineracao": 0.0156,
+        "oceano": 0.0092,
+        "pantano": 0.2175,
+        "planicie": 0.0142,
+        "vazio": 0.0187
+      },
+      "probabilidades_coroas": {
+        "0": 0.7536,
+        "1": 0.1885,
+        "2": 0.0505,
+        "3": 0.0073
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "g1",
+        "terreno": "planicie",
+        "coroas": 1
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.4523,
+          "deserto": 0.0162,
+          "floresta": 0.2563,
+          "mineracao": 0.0156,
+          "oceano": 0.0092,
+          "pantano": 0.2175,
+          "planicie": 0.0142,
+          "vazio": 0.0187
+        },
+        "coroas": {
+          "0": 0.7536,
+          "1": 0.1885,
+          "2": 0.0505,
+          "3": 0.0073
+        },
+        "prob_terreno_real": 0.0142,
+        "prob_coroas_real": 0.1885
+      },
+      "tipo_divergencia": "terreno_e_coroas",
+      "motivo_provavel": "confusao_terreno_e_coroa",
+      "fatores_associados": [
+        "confusao_terreno_e_coroa"
+      ]
+    },
+    {
+      "prefixo": "img_9027",
+      "arquivo_origem": "img_9027.jpg",
+      "arquivo_celula": "img_9027_L2_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        2,
+        2
+      ],
+      "codigo_real": "c",
+      "terreno_real": "castelo",
+      "coroas_reais": 0,
+      "codigo_predito": "v",
+      "terreno_predito": "vazio",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.9889,
+      "confianca_coroas": 0.966,
+      "confianca_combinada": 0.966,
+      "probabilidades_terreno": {
+        "castelo": 0.0049,
+        "deserto": 0.0001,
+        "floresta": 0.0006,
+        "mineracao": 0.0006,
+        "oceano": 0.001,
+        "pantano": 0.0029,
+        "planicie": 0.001,
+        "vazio": 0.9889
+      },
+      "probabilidades_coroas": {
+        "0": 0.966,
+        "1": 0.0002,
+        "2": 0.0023,
+        "3": 0.0315
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0049,
+          "deserto": 0.0001,
+          "floresta": 0.0006,
+          "mineracao": 0.0006,
+          "oceano": 0.001,
+          "pantano": 0.0029,
+          "planicie": 0.001,
+          "vazio": 0.9889
+        },
+        "coroas": {
+          "0": 0.966,
+          "1": 0.0002,
+          "2": 0.0023,
+          "3": 0.0315
+        },
+        "prob_terreno_real": 0.0049,
+        "prob_coroas_real": 0.966
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_com_fundo_vazio",
+      "fatores_associados": [
+        "confusao_com_fundo_vazio"
+      ]
+    },
+    {
+      "prefixo": "p4",
+      "arquivo_origem": "p4.jpg",
+      "arquivo_celula": "p4_L1_C3.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        1,
+        3
+      ],
+      "codigo_real": "p1",
+      "terreno_real": "pantano",
+      "coroas_reais": 1,
+      "codigo_predito": "p2",
+      "terreno_predito": "pantano",
+      "coroas_preditas": 2,
+      "confianca_terreno": 0.9991,
+      "confianca_coroas": 0.7858,
+      "confianca_combinada": 0.7858,
+      "probabilidades_terreno": {
+        "castelo": 0.0002,
+        "deserto": 0.0004,
+        "floresta": 0.0001,
+        "mineracao": 0.0001,
+        "oceano": 0.0,
+        "pantano": 0.9991,
+        "planicie": 0.0002,
+        "vazio": 0.0
+      },
+      "probabilidades_coroas": {
+        "0": 0.0612,
+        "1": 0.1515,
+        "2": 0.7858,
+        "3": 0.0015
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "p1",
+        "terreno": "pantano",
+        "coroas": 1
+      },
+      "valor_predito": {
+        "codigo": "p2",
+        "terreno": "pantano",
+        "coroas": 2
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0002,
+          "deserto": 0.0004,
+          "floresta": 0.0001,
+          "mineracao": 0.0001,
+          "oceano": 0.0,
+          "pantano": 0.9991,
+          "planicie": 0.0002,
+          "vazio": 0.0
+        },
+        "coroas": {
+          "0": 0.0612,
+          "1": 0.1515,
+          "2": 0.7858,
+          "3": 0.0015
+        },
+        "prob_terreno_real": 0.9991,
+        "prob_coroas_real": 0.1515
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "p4",
+      "arquivo_origem": "p4.jpg",
+      "arquivo_celula": "p4_L3_C3.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        3,
+        3
+      ],
+      "codigo_real": "f",
+      "terreno_real": "floresta",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.6949,
+      "confianca_coroas": 0.999,
+      "confianca_combinada": 0.6949,
+      "probabilidades_terreno": {
+        "castelo": 0.6949,
+        "deserto": 0.0005,
+        "floresta": 0.2753,
+        "mineracao": 0.008,
+        "oceano": 0.0005,
+        "pantano": 0.0024,
+        "planicie": 0.0154,
+        "vazio": 0.003
+      },
+      "probabilidades_coroas": {
+        "0": 0.999,
+        "1": 0.0002,
+        "2": 0.0001,
+        "3": 0.0006
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "f",
+        "terreno": "floresta",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.6949,
+          "deserto": 0.0005,
+          "floresta": 0.2753,
+          "mineracao": 0.008,
+          "oceano": 0.0005,
+          "pantano": 0.0024,
+          "planicie": 0.0154,
+          "vazio": 0.003
+        },
+        "coroas": {
+          "0": 0.999,
+          "1": 0.0002,
+          "2": 0.0001,
+          "3": 0.0006
+        },
+        "prob_terreno_real": 0.2753,
+        "prob_coroas_real": 0.999
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "p7",
+      "arquivo_origem": "p7.webp",
+      "arquivo_celula": "p7_L0_C0.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        0,
+        0
+      ],
+      "codigo_real": "d",
+      "terreno_real": "deserto",
+      "coroas_reais": 0,
+      "codigo_predito": "v",
+      "terreno_predito": "vazio",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.4636,
+      "confianca_coroas": 0.9966,
+      "confianca_combinada": 0.4636,
+      "probabilidades_terreno": {
+        "castelo": 0.022,
+        "deserto": 0.4619,
+        "floresta": 0.0008,
+        "mineracao": 0.0012,
+        "oceano": 0.015,
+        "pantano": 0.0179,
+        "planicie": 0.0177,
+        "vazio": 0.4636
+      },
+      "probabilidades_coroas": {
+        "0": 0.9966,
+        "1": 0.0011,
+        "2": 0.0017,
+        "3": 0.0006
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "d",
+        "terreno": "deserto",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.022,
+          "deserto": 0.4619,
+          "floresta": 0.0008,
+          "mineracao": 0.0012,
+          "oceano": 0.015,
+          "pantano": 0.0179,
+          "planicie": 0.0177,
+          "vazio": 0.4636
+        },
+        "coroas": {
+          "0": 0.9966,
+          "1": 0.0011,
+          "2": 0.0017,
+          "3": 0.0006
+        },
+        "prob_terreno_real": 0.4619,
+        "prob_coroas_real": 0.9966
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_com_fundo_vazio",
+      "fatores_associados": [
+        "confusao_com_fundo_vazio"
+      ]
+    },
+    {
+      "prefixo": "p7",
+      "arquivo_origem": "p7.webp",
+      "arquivo_celula": "p7_L1_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        1,
+        2
+      ],
+      "codigo_real": "g",
+      "terreno_real": "planicie",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.5997,
+      "confianca_coroas": 0.8801,
+      "confianca_combinada": 0.5997,
+      "probabilidades_terreno": {
+        "castelo": 0.5997,
+        "deserto": 0.1193,
+        "floresta": 0.0032,
+        "mineracao": 0.063,
+        "oceano": 0.0086,
+        "pantano": 0.0225,
+        "planicie": 0.1769,
+        "vazio": 0.0068
+      },
+      "probabilidades_coroas": {
+        "0": 0.8801,
+        "1": 0.1038,
+        "2": 0.0105,
+        "3": 0.0056
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "g",
+        "terreno": "planicie",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.5997,
+          "deserto": 0.1193,
+          "floresta": 0.0032,
+          "mineracao": 0.063,
+          "oceano": 0.0086,
+          "pantano": 0.0225,
+          "planicie": 0.1769,
+          "vazio": 0.0068
+        },
+        "coroas": {
+          "0": 0.8801,
+          "1": 0.1038,
+          "2": 0.0105,
+          "3": 0.0056
+        },
+        "prob_terreno_real": 0.1769,
+        "prob_coroas_real": 0.8801
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "pic3878199_webp",
+      "arquivo_origem": "pic3878199_webp.jpg",
+      "arquivo_celula": "pic3878199_webp_L2_C1.jpg",
+      "lote": "lote_01",
+      "conjunto": "validacao",
+      "posicao": [
+        2,
+        1
+      ],
+      "codigo_real": "d",
+      "terreno_real": "deserto",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.9112,
+      "confianca_coroas": 0.8762,
+      "confianca_combinada": 0.8762,
+      "probabilidades_terreno": {
+        "castelo": 0.9112,
+        "deserto": 0.0468,
+        "floresta": 0.0018,
+        "mineracao": 0.0164,
+        "oceano": 0.0037,
+        "pantano": 0.002,
+        "planicie": 0.0116,
+        "vazio": 0.0065
+      },
+      "probabilidades_coroas": {
+        "0": 0.8762,
+        "1": 0.1038,
+        "2": 0.0161,
+        "3": 0.0039
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "d",
+        "terreno": "deserto",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.9112,
+          "deserto": 0.0468,
+          "floresta": 0.0018,
+          "mineracao": 0.0164,
+          "oceano": 0.0037,
+          "pantano": 0.002,
+          "planicie": 0.0116,
+          "vazio": 0.0065
+        },
+        "coroas": {
+          "0": 0.8762,
+          "1": 0.1038,
+          "2": 0.0161,
+          "3": 0.0039
+        },
+        "prob_terreno_real": 0.0468,
+        "prob_coroas_real": 0.8762
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "post_image_30f23a57-86ba-4ae4-a79e-415a940f137f",
+      "arquivo_origem": "post_image_30f23a57-86ba-4ae4-a79e-415a940f137f.jpeg",
+      "arquivo_celula": "post_image_30f23a57-86ba-4ae4-a79e-415a940f137f_L1_C1.jpg",
+      "lote": "lote_02",
+      "conjunto": "validacao",
+      "posicao": [
+        1,
+        1
+      ],
+      "codigo_real": "p2",
+      "terreno_real": "pantano",
+      "coroas_reais": 2,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.7335,
+      "confianca_coroas": 0.8332,
+      "confianca_combinada": 0.7335,
+      "probabilidades_terreno": {
+        "castelo": 0.7335,
+        "deserto": 0.0007,
+        "floresta": 0.0065,
+        "mineracao": 0.0275,
+        "oceano": 0.0009,
+        "pantano": 0.2018,
+        "planicie": 0.009,
+        "vazio": 0.02
+      },
+      "probabilidades_coroas": {
+        "0": 0.8332,
+        "1": 0.0075,
+        "2": 0.043,
+        "3": 0.1164
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "p2",
+        "terreno": "pantano",
+        "coroas": 2
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.7335,
+          "deserto": 0.0007,
+          "floresta": 0.0065,
+          "mineracao": 0.0275,
+          "oceano": 0.0009,
+          "pantano": 0.2018,
+          "planicie": 0.009,
+          "vazio": 0.02
+        },
+        "coroas": {
+          "0": 0.8332,
+          "1": 0.0075,
+          "2": 0.043,
+          "3": 0.1164
+        },
+        "prob_terreno_real": 0.2018,
+        "prob_coroas_real": 0.043
+      },
+      "tipo_divergencia": "terreno_e_coroas",
+      "motivo_provavel": "confusao_terreno_e_coroa",
+      "fatores_associados": [
+        "confusao_terreno_e_coroa"
+      ]
+    },
+    {
+      "prefixo": "089f4_130364_jpg",
+      "arquivo_origem": "089f4_130364_jpg.jpg",
+      "arquivo_celula": "089f4_130364_jpg_L0_C5.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "posicao": [
+        0,
+        5
+      ],
+      "codigo_real": "p",
+      "terreno_real": "pantano",
+      "coroas_reais": 0,
+      "codigo_predito": "p1",
+      "terreno_predito": "pantano",
+      "coroas_preditas": 1,
+      "confianca_terreno": 0.9993,
+      "confianca_coroas": 0.6993,
+      "confianca_combinada": 0.6993,
+      "probabilidades_terreno": {
+        "castelo": 0.0,
+        "deserto": 0.0005,
+        "floresta": 0.0,
+        "mineracao": 0.0,
+        "oceano": 0.0,
+        "pantano": 0.9993,
+        "planicie": 0.0001,
+        "vazio": 0.0
+      },
+      "probabilidades_coroas": {
+        "0": 0.3007,
+        "1": 0.6993,
+        "2": 0.0,
+        "3": 0.0
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "p",
+        "terreno": "pantano",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "p1",
+        "terreno": "pantano",
+        "coroas": 1
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0,
+          "deserto": 0.0005,
+          "floresta": 0.0,
+          "mineracao": 0.0,
+          "oceano": 0.0,
+          "pantano": 0.9993,
+          "planicie": 0.0001,
+          "vazio": 0.0
+        },
+        "coroas": {
+          "0": 0.3007,
+          "1": 0.6993,
+          "2": 0.0,
+          "3": 0.0
+        },
+        "prob_terreno_real": 0.9993,
+        "prob_coroas_real": 0.3007
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "erro_contagem_coroa",
+      "fatores_associados": [
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "1333010_64046572_b",
+      "arquivo_origem": "1333010_64046572_b.jpeg",
+      "arquivo_celula": "1333010_64046572_b_L1_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        1,
+        2
+      ],
+      "codigo_real": "f",
+      "terreno_real": "floresta",
+      "coroas_reais": 0,
+      "codigo_predito": "f1",
+      "terreno_predito": "floresta",
+      "coroas_preditas": 1,
+      "confianca_terreno": 0.9822,
+      "confianca_coroas": 0.5194,
+      "confianca_combinada": 0.5194,
+      "probabilidades_terreno": {
+        "castelo": 0.0153,
+        "deserto": 0.0004,
+        "floresta": 0.9822,
+        "mineracao": 0.0003,
+        "oceano": 0.0009,
+        "pantano": 0.0004,
+        "planicie": 0.0003,
+        "vazio": 0.0002
+      },
+      "probabilidades_coroas": {
+        "0": 0.4746,
+        "1": 0.5194,
+        "2": 0.0055,
+        "3": 0.0005
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "f",
+        "terreno": "floresta",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "f1",
+        "terreno": "floresta",
+        "coroas": 1
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0153,
+          "deserto": 0.0004,
+          "floresta": 0.9822,
+          "mineracao": 0.0003,
+          "oceano": 0.0009,
+          "pantano": 0.0004,
+          "planicie": 0.0003,
+          "vazio": 0.0002
+        },
+        "coroas": {
+          "0": 0.4746,
+          "1": 0.5194,
+          "2": 0.0055,
+          "3": 0.0005
+        },
+        "prob_terreno_real": 0.9822,
+        "prob_coroas_real": 0.4746
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "52893_149608_jpeg",
+      "arquivo_origem": "52893_149608_jpeg.jpg",
+      "arquivo_celula": "52893_149608_jpeg_L0_C2.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "posicao": [
+        0,
+        2
+      ],
+      "codigo_real": "d",
+      "terreno_real": "deserto",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.6789,
+      "confianca_coroas": 0.9141,
+      "confianca_combinada": 0.6789,
+      "probabilidades_terreno": {
+        "castelo": 0.6789,
+        "deserto": 0.257,
+        "floresta": 0.0011,
+        "mineracao": 0.0159,
+        "oceano": 0.0091,
+        "pantano": 0.0081,
+        "planicie": 0.0051,
+        "vazio": 0.0247
+      },
+      "probabilidades_coroas": {
+        "0": 0.9141,
+        "1": 0.0829,
+        "2": 0.0021,
+        "3": 0.0009
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "d",
+        "terreno": "deserto",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.6789,
+          "deserto": 0.257,
+          "floresta": 0.0011,
+          "mineracao": 0.0159,
+          "oceano": 0.0091,
+          "pantano": 0.0081,
+          "planicie": 0.0051,
+          "vazio": 0.0247
+        },
+        "coroas": {
+          "0": 0.9141,
+          "1": 0.0829,
+          "2": 0.0021,
+          "3": 0.0009
+        },
+        "prob_terreno_real": 0.257,
+        "prob_coroas_real": 0.9141
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_terreno",
+      "fatores_associados": [
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "5fb647d7",
+      "arquivo_origem": "5fb647d7.jpg",
+      "arquivo_celula": "5fb647d7_L1_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        1,
+        2
+      ],
+      "codigo_real": "o1",
+      "terreno_real": "oceano",
+      "coroas_reais": 1,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.5698,
+      "confianca_coroas": 0.6992,
+      "confianca_combinada": 0.5698,
+      "probabilidades_terreno": {
+        "castelo": 0.5698,
+        "deserto": 0.0172,
+        "floresta": 0.0022,
+        "mineracao": 0.0595,
+        "oceano": 0.2807,
+        "pantano": 0.0208,
+        "planicie": 0.027,
+        "vazio": 0.0228
+      },
+      "probabilidades_coroas": {
+        "0": 0.6992,
+        "1": 0.2102,
+        "2": 0.0786,
+        "3": 0.012
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "o1",
+        "terreno": "oceano",
+        "coroas": 1
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.5698,
+          "deserto": 0.0172,
+          "floresta": 0.0022,
+          "mineracao": 0.0595,
+          "oceano": 0.2807,
+          "pantano": 0.0208,
+          "planicie": 0.027,
+          "vazio": 0.0228
+        },
+        "coroas": {
+          "0": 0.6992,
+          "1": 0.2102,
+          "2": 0.0786,
+          "3": 0.012
+        },
+        "prob_terreno_real": 0.2807,
+        "prob_coroas_real": 0.2102
+      },
+      "tipo_divergencia": "terreno_e_coroas",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno_e_coroa"
+      ]
+    },
+    {
+      "prefixo": "DERJXjzV0AEU5rQ",
+      "arquivo_origem": "DERJXjzV0AEU5rQ.jpg",
+      "arquivo_celula": "DERJXjzV0AEU5rQ_L0_C3.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        0,
+        3
+      ],
+      "codigo_real": "g",
+      "terreno_real": "planicie",
+      "coroas_reais": 0,
+      "codigo_predito": "v",
+      "terreno_predito": "vazio",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.8051,
+      "confianca_coroas": 1.0,
+      "confianca_combinada": 0.8051,
+      "probabilidades_terreno": {
+        "castelo": 0.0067,
+        "deserto": 0.0201,
+        "floresta": 0.0044,
+        "mineracao": 0.0007,
+        "oceano": 0.0238,
+        "pantano": 0.0045,
+        "planicie": 0.1347,
+        "vazio": 0.8051
+      },
+      "probabilidades_coroas": {
+        "0": 1.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "g",
+        "terreno": "planicie",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0067,
+          "deserto": 0.0201,
+          "floresta": 0.0044,
+          "mineracao": 0.0007,
+          "oceano": 0.0238,
+          "pantano": 0.0045,
+          "planicie": 0.1347,
+          "vazio": 0.8051
+        },
+        "coroas": {
+          "0": 1.0,
+          "1": 0.0,
+          "2": 0.0,
+          "3": 0.0
+        },
+        "prob_terreno_real": 0.1347,
+        "prob_coroas_real": 1.0
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_com_fundo_vazio",
+      "fatores_associados": [
+        "confusao_com_fundo_vazio"
+      ]
+    },
+    {
+      "prefixo": "DERJXjzV0AEU5rQ",
+      "arquivo_origem": "DERJXjzV0AEU5rQ.jpg",
+      "arquivo_celula": "DERJXjzV0AEU5rQ_L0_C4.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        0,
+        4
+      ],
+      "codigo_real": "p2",
+      "terreno_real": "pantano",
+      "coroas_reais": 2,
+      "codigo_predito": "v",
+      "terreno_predito": "vazio",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.7553,
+      "confianca_coroas": 0.9999,
+      "confianca_combinada": 0.7553,
+      "probabilidades_terreno": {
+        "castelo": 0.0146,
+        "deserto": 0.023,
+        "floresta": 0.0026,
+        "mineracao": 0.0007,
+        "oceano": 0.1813,
+        "pantano": 0.0178,
+        "planicie": 0.0048,
+        "vazio": 0.7553
+      },
+      "probabilidades_coroas": {
+        "0": 0.9999,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0001
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "p2",
+        "terreno": "pantano",
+        "coroas": 2
+      },
+      "valor_predito": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0146,
+          "deserto": 0.023,
+          "floresta": 0.0026,
+          "mineracao": 0.0007,
+          "oceano": 0.1813,
+          "pantano": 0.0178,
+          "planicie": 0.0048,
+          "vazio": 0.7553
+        },
+        "coroas": {
+          "0": 0.9999,
+          "1": 0.0,
+          "2": 0.0,
+          "3": 0.0001
+        },
+        "prob_terreno_real": 0.0178,
+        "prob_coroas_real": 0.0
+      },
+      "tipo_divergencia": "terreno_e_coroas",
+      "motivo_provavel": "confusao_terreno_e_coroa",
+      "fatores_associados": [
+        "confusao_terreno_e_coroa"
+      ]
+    },
+    {
+      "prefixo": "ba18885158c5206547066ca5dc5c9ee3-scaled",
+      "arquivo_origem": "ba18885158c5206547066ca5dc5c9ee3-scaled.jpg",
+      "arquivo_celula": "ba18885158c5206547066ca5dc5c9ee3-scaled_L0_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        0,
+        2
+      ],
+      "codigo_real": "d",
+      "terreno_real": "deserto",
+      "coroas_reais": 0,
+      "codigo_predito": "v",
+      "terreno_predito": "vazio",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.664,
+      "confianca_coroas": 0.9985,
+      "confianca_combinada": 0.664,
+      "probabilidades_terreno": {
+        "castelo": 0.1126,
+        "deserto": 0.0018,
+        "floresta": 0.0483,
+        "mineracao": 0.0024,
+        "oceano": 0.0038,
+        "pantano": 0.0538,
+        "planicie": 0.1134,
+        "vazio": 0.664
+      },
+      "probabilidades_coroas": {
+        "0": 0.9985,
+        "1": 0.0,
+        "2": 0.0007,
+        "3": 0.0008
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "d",
+        "terreno": "deserto",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.1126,
+          "deserto": 0.0018,
+          "floresta": 0.0483,
+          "mineracao": 0.0024,
+          "oceano": 0.0038,
+          "pantano": 0.0538,
+          "planicie": 0.1134,
+          "vazio": 0.664
+        },
+        "coroas": {
+          "0": 0.9985,
+          "1": 0.0,
+          "2": 0.0007,
+          "3": 0.0008
+        },
+        "prob_terreno_real": 0.0018,
+        "prob_coroas_real": 0.9985
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_com_fundo_vazio",
+      "fatores_associados": [
+        "confusao_com_fundo_vazio"
+      ]
+    },
+    {
+      "prefixo": "ba18885158c5206547066ca5dc5c9ee3-scaled",
+      "arquivo_origem": "ba18885158c5206547066ca5dc5c9ee3-scaled.jpg",
+      "arquivo_celula": "ba18885158c5206547066ca5dc5c9ee3-scaled_L1_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        1,
+        2
+      ],
+      "codigo_real": "g1",
+      "terreno_real": "planicie",
+      "coroas_reais": 1,
+      "codigo_predito": "v",
+      "terreno_predito": "vazio",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.3599,
+      "confianca_coroas": 0.9945,
+      "confianca_combinada": 0.3599,
+      "probabilidades_terreno": {
+        "castelo": 0.1987,
+        "deserto": 0.0051,
+        "floresta": 0.0208,
+        "mineracao": 0.0046,
+        "oceano": 0.0014,
+        "pantano": 0.331,
+        "planicie": 0.0785,
+        "vazio": 0.3599
+      },
+      "probabilidades_coroas": {
+        "0": 0.9945,
+        "1": 0.0005,
+        "2": 0.0039,
+        "3": 0.0011
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "g1",
+        "terreno": "planicie",
+        "coroas": 1
+      },
+      "valor_predito": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.1987,
+          "deserto": 0.0051,
+          "floresta": 0.0208,
+          "mineracao": 0.0046,
+          "oceano": 0.0014,
+          "pantano": 0.331,
+          "planicie": 0.0785,
+          "vazio": 0.3599
+        },
+        "coroas": {
+          "0": 0.9945,
+          "1": 0.0005,
+          "2": 0.0039,
+          "3": 0.0011
+        },
+        "prob_terreno_real": 0.0785,
+        "prob_coroas_real": 0.0005
+      },
+      "tipo_divergencia": "terreno_e_coroas",
+      "motivo_provavel": "confusao_terreno_e_coroa",
+      "fatores_associados": [
+        "confusao_terreno_e_coroa"
+      ]
+    },
+    {
+      "prefixo": "ba18885158c5206547066ca5dc5c9ee3-scaled",
+      "arquivo_origem": "ba18885158c5206547066ca5dc5c9ee3-scaled.jpg",
+      "arquivo_celula": "ba18885158c5206547066ca5dc5c9ee3-scaled_L4_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        4,
+        2
+      ],
+      "codigo_real": "f",
+      "terreno_real": "floresta",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.6774,
+      "confianca_coroas": 0.9633,
+      "confianca_combinada": 0.6774,
+      "probabilidades_terreno": {
+        "castelo": 0.6774,
+        "deserto": 0.0003,
+        "floresta": 0.0067,
+        "mineracao": 0.0044,
+        "oceano": 0.001,
+        "pantano": 0.0188,
+        "planicie": 0.0129,
+        "vazio": 0.2785
+      },
+      "probabilidades_coroas": {
+        "0": 0.9633,
+        "1": 0.0005,
+        "2": 0.0152,
+        "3": 0.021
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "f",
+        "terreno": "floresta",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.6774,
+          "deserto": 0.0003,
+          "floresta": 0.0067,
+          "mineracao": 0.0044,
+          "oceano": 0.001,
+          "pantano": 0.0188,
+          "planicie": 0.0129,
+          "vazio": 0.2785
+        },
+        "coroas": {
+          "0": 0.9633,
+          "1": 0.0005,
+          "2": 0.0152,
+          "3": 0.021
+        },
+        "prob_terreno_real": 0.0067,
+        "prob_coroas_real": 0.9633
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_terreno",
+      "fatores_associados": [
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370018416_3301_1000",
+      "arquivo_origem": "boardlife_1794370018416_3301_1000.jpg",
+      "arquivo_celula": "boardlife_1794370018416_3301_1000_L0_C1.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        0,
+        1
+      ],
+      "codigo_real": "f",
+      "terreno_real": "floresta",
+      "coroas_reais": 0,
+      "codigo_predito": "v",
+      "terreno_predito": "vazio",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.6726,
+      "confianca_coroas": 0.9968,
+      "confianca_combinada": 0.6726,
+      "probabilidades_terreno": {
+        "castelo": 0.0933,
+        "deserto": 0.002,
+        "floresta": 0.0357,
+        "mineracao": 0.0017,
+        "oceano": 0.0022,
+        "pantano": 0.1761,
+        "planicie": 0.0165,
+        "vazio": 0.6726
+      },
+      "probabilidades_coroas": {
+        "0": 0.9968,
+        "1": 0.0002,
+        "2": 0.0019,
+        "3": 0.0011
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "f",
+        "terreno": "floresta",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0933,
+          "deserto": 0.002,
+          "floresta": 0.0357,
+          "mineracao": 0.0017,
+          "oceano": 0.0022,
+          "pantano": 0.1761,
+          "planicie": 0.0165,
+          "vazio": 0.6726
+        },
+        "coroas": {
+          "0": 0.9968,
+          "1": 0.0002,
+          "2": 0.0019,
+          "3": 0.0011
+        },
+        "prob_terreno_real": 0.0357,
+        "prob_coroas_real": 0.9968
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_com_fundo_vazio",
+      "fatores_associados": [
+        "confusao_com_fundo_vazio"
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370018416_3301_1000",
+      "arquivo_origem": "boardlife_1794370018416_3301_1000.jpg",
+      "arquivo_celula": "boardlife_1794370018416_3301_1000_L1_C1.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        1,
+        1
+      ],
+      "codigo_real": "f",
+      "terreno_real": "floresta",
+      "coroas_reais": 0,
+      "codigo_predito": "v",
+      "terreno_predito": "vazio",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.871,
+      "confianca_coroas": 0.9989,
+      "confianca_combinada": 0.871,
+      "probabilidades_terreno": {
+        "castelo": 0.0508,
+        "deserto": 0.0005,
+        "floresta": 0.0058,
+        "mineracao": 0.0002,
+        "oceano": 0.0011,
+        "pantano": 0.0688,
+        "planicie": 0.0019,
+        "vazio": 0.871
+      },
+      "probabilidades_coroas": {
+        "0": 0.9989,
+        "1": 0.0001,
+        "2": 0.0008,
+        "3": 0.0002
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "f",
+        "terreno": "floresta",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0508,
+          "deserto": 0.0005,
+          "floresta": 0.0058,
+          "mineracao": 0.0002,
+          "oceano": 0.0011,
+          "pantano": 0.0688,
+          "planicie": 0.0019,
+          "vazio": 0.871
+        },
+        "coroas": {
+          "0": 0.9989,
+          "1": 0.0001,
+          "2": 0.0008,
+          "3": 0.0002
+        },
+        "prob_terreno_real": 0.0058,
+        "prob_coroas_real": 0.9989
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_com_fundo_vazio",
+      "fatores_associados": [
+        "confusao_com_fundo_vazio"
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370027431_2563_1000",
+      "arquivo_origem": "boardlife_1794370027431_2563_1000.jpg",
+      "arquivo_celula": "boardlife_1794370027431_2563_1000_L0_C1.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        0,
+        1
+      ],
+      "codigo_real": "f",
+      "terreno_real": "floresta",
+      "coroas_reais": 0,
+      "codigo_predito": "v",
+      "terreno_predito": "vazio",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.792,
+      "confianca_coroas": 0.999,
+      "confianca_combinada": 0.792,
+      "probabilidades_terreno": {
+        "castelo": 0.0782,
+        "deserto": 0.0008,
+        "floresta": 0.0198,
+        "mineracao": 0.0008,
+        "oceano": 0.0054,
+        "pantano": 0.0886,
+        "planicie": 0.0144,
+        "vazio": 0.792
+      },
+      "probabilidades_coroas": {
+        "0": 0.999,
+        "1": 0.0001,
+        "2": 0.0006,
+        "3": 0.0003
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "f",
+        "terreno": "floresta",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0782,
+          "deserto": 0.0008,
+          "floresta": 0.0198,
+          "mineracao": 0.0008,
+          "oceano": 0.0054,
+          "pantano": 0.0886,
+          "planicie": 0.0144,
+          "vazio": 0.792
+        },
+        "coroas": {
+          "0": 0.999,
+          "1": 0.0001,
+          "2": 0.0006,
+          "3": 0.0003
+        },
+        "prob_terreno_real": 0.0198,
+        "prob_coroas_real": 0.999
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_com_fundo_vazio",
+      "fatores_associados": [
+        "confusao_com_fundo_vazio"
+      ]
+    },
+    {
+      "prefixo": "boardlife_1794370027431_2563_1000",
+      "arquivo_origem": "boardlife_1794370027431_2563_1000.jpg",
+      "arquivo_celula": "boardlife_1794370027431_2563_1000_L2_C3.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        2,
+        3
+      ],
+      "codigo_real": "f",
+      "terreno_real": "floresta",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.8032,
+      "confianca_coroas": 0.9844,
+      "confianca_combinada": 0.8032,
+      "probabilidades_terreno": {
+        "castelo": 0.8032,
+        "deserto": 0.0051,
+        "floresta": 0.0261,
+        "mineracao": 0.004,
+        "oceano": 0.0102,
+        "pantano": 0.084,
+        "planicie": 0.0548,
+        "vazio": 0.0125
+      },
+      "probabilidades_coroas": {
+        "0": 0.9844,
+        "1": 0.0108,
+        "2": 0.0042,
+        "3": 0.0006
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "f",
+        "terreno": "floresta",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.8032,
+          "deserto": 0.0051,
+          "floresta": 0.0261,
+          "mineracao": 0.004,
+          "oceano": 0.0102,
+          "pantano": 0.084,
+          "planicie": 0.0548,
+          "vazio": 0.0125
+        },
+        "coroas": {
+          "0": 0.9844,
+          "1": 0.0108,
+          "2": 0.0042,
+          "3": 0.0006
+        },
+        "prob_terreno_real": 0.0261,
+        "prob_coroas_real": 0.9844
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "d3d2c_177522_jpg",
+      "arquivo_origem": "d3d2c_177522_jpg.jpg",
+      "arquivo_celula": "d3d2c_177522_jpg_L0_C4.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "posicao": [
+        0,
+        4
+      ],
+      "codigo_real": "p2",
+      "terreno_real": "pantano",
+      "coroas_reais": 2,
+      "codigo_predito": "p1",
+      "terreno_predito": "pantano",
+      "coroas_preditas": 1,
+      "confianca_terreno": 0.9986,
+      "confianca_coroas": 0.5974,
+      "confianca_combinada": 0.5974,
+      "probabilidades_terreno": {
+        "castelo": 0.0001,
+        "deserto": 0.0004,
+        "floresta": 0.0005,
+        "mineracao": 0.0001,
+        "oceano": 0.0,
+        "pantano": 0.9986,
+        "planicie": 0.0003,
+        "vazio": 0.0
+      },
+      "probabilidades_coroas": {
+        "0": 0.0532,
+        "1": 0.5974,
+        "2": 0.348,
+        "3": 0.0014
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "p2",
+        "terreno": "pantano",
+        "coroas": 2
+      },
+      "valor_predito": {
+        "codigo": "p1",
+        "terreno": "pantano",
+        "coroas": 1
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0001,
+          "deserto": 0.0004,
+          "floresta": 0.0005,
+          "mineracao": 0.0001,
+          "oceano": 0.0,
+          "pantano": 0.9986,
+          "planicie": 0.0003,
+          "vazio": 0.0
+        },
+        "coroas": {
+          "0": 0.0532,
+          "1": 0.5974,
+          "2": 0.348,
+          "3": 0.0014
+        },
+        "prob_terreno_real": 0.9986,
+        "prob_coroas_real": 0.348
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "erro_contagem_coroa",
+      "fatores_associados": [
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "e1b07_150241_jpg",
+      "arquivo_origem": "e1b07_150241_jpg.jpg",
+      "arquivo_celula": "e1b07_150241_jpg_L0_C1.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "posicao": [
+        0,
+        1
+      ],
+      "codigo_real": "g2",
+      "terreno_real": "planicie",
+      "coroas_reais": 2,
+      "codigo_predito": "g1",
+      "terreno_predito": "planicie",
+      "coroas_preditas": 1,
+      "confianca_terreno": 0.9989,
+      "confianca_coroas": 0.9048,
+      "confianca_combinada": 0.9048,
+      "probabilidades_terreno": {
+        "castelo": 0.0,
+        "deserto": 0.0,
+        "floresta": 0.001,
+        "mineracao": 0.0,
+        "oceano": 0.0,
+        "pantano": 0.0,
+        "planicie": 0.9989,
+        "vazio": 0.0
+      },
+      "probabilidades_coroas": {
+        "0": 0.0004,
+        "1": 0.9048,
+        "2": 0.0948,
+        "3": 0.0
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "g2",
+        "terreno": "planicie",
+        "coroas": 2
+      },
+      "valor_predito": {
+        "codigo": "g1",
+        "terreno": "planicie",
+        "coroas": 1
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0,
+          "deserto": 0.0,
+          "floresta": 0.001,
+          "mineracao": 0.0,
+          "oceano": 0.0,
+          "pantano": 0.0,
+          "planicie": 0.9989,
+          "vazio": 0.0
+        },
+        "coroas": {
+          "0": 0.0004,
+          "1": 0.9048,
+          "2": 0.0948,
+          "3": 0.0
+        },
+        "prob_terreno_real": 0.9989,
+        "prob_coroas_real": 0.0948
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "erro_contagem_coroa",
+      "fatores_associados": [
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "images",
+      "arquivo_origem": "images.jpg",
+      "arquivo_celula": "images_L3_C1.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        3,
+        1
+      ],
+      "codigo_real": "d",
+      "terreno_real": "deserto",
+      "coroas_reais": 0,
+      "codigo_predito": "g",
+      "terreno_predito": "planicie",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.3939,
+      "confianca_coroas": 0.9951,
+      "confianca_combinada": 0.3939,
+      "probabilidades_terreno": {
+        "castelo": 0.0492,
+        "deserto": 0.3731,
+        "floresta": 0.001,
+        "mineracao": 0.0059,
+        "oceano": 0.0343,
+        "pantano": 0.0155,
+        "planicie": 0.3939,
+        "vazio": 0.1272
+      },
+      "probabilidades_coroas": {
+        "0": 0.9951,
+        "1": 0.002,
+        "2": 0.002,
+        "3": 0.0008
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "d",
+        "terreno": "deserto",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "g",
+        "terreno": "planicie",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0492,
+          "deserto": 0.3731,
+          "floresta": 0.001,
+          "mineracao": 0.0059,
+          "oceano": 0.0343,
+          "pantano": 0.0155,
+          "planicie": 0.3939,
+          "vazio": 0.1272
+        },
+        "coroas": {
+          "0": 0.9951,
+          "1": 0.002,
+          "2": 0.002,
+          "3": 0.0008
+        },
+        "prob_terreno_real": 0.3731,
+        "prob_coroas_real": 0.9951
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "images",
+      "arquivo_origem": "images.jpg",
+      "arquivo_celula": "images_L3_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        3,
+        2
+      ],
+      "codigo_real": "g1",
+      "terreno_real": "planicie",
+      "coroas_reais": 1,
+      "codigo_predito": "g2",
+      "terreno_predito": "planicie",
+      "coroas_preditas": 2,
+      "confianca_terreno": 1.0,
+      "confianca_coroas": 0.7475,
+      "confianca_combinada": 0.7475,
+      "probabilidades_terreno": {
+        "castelo": 0.0,
+        "deserto": 0.0,
+        "floresta": 0.0,
+        "mineracao": 0.0,
+        "oceano": 0.0,
+        "pantano": 0.0,
+        "planicie": 1.0,
+        "vazio": 0.0
+      },
+      "probabilidades_coroas": {
+        "0": 0.0022,
+        "1": 0.2503,
+        "2": 0.7475,
+        "3": 0.0
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "g1",
+        "terreno": "planicie",
+        "coroas": 1
+      },
+      "valor_predito": {
+        "codigo": "g2",
+        "terreno": "planicie",
+        "coroas": 2
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0,
+          "deserto": 0.0,
+          "floresta": 0.0,
+          "mineracao": 0.0,
+          "oceano": 0.0,
+          "pantano": 0.0,
+          "planicie": 1.0,
+          "vazio": 0.0
+        },
+        "coroas": {
+          "0": 0.0022,
+          "1": 0.2503,
+          "2": 0.7475,
+          "3": 0.0
+        },
+        "prob_terreno_real": 1.0,
+        "prob_coroas_real": 0.2503
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "p3",
+      "arquivo_origem": "p3.jpg",
+      "arquivo_celula": "p3_L1_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        1,
+        2
+      ],
+      "codigo_real": "d",
+      "terreno_real": "deserto",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.9934,
+      "confianca_coroas": 0.995,
+      "confianca_combinada": 0.9934,
+      "probabilidades_terreno": {
+        "castelo": 0.9934,
+        "deserto": 0.0027,
+        "floresta": 0.0,
+        "mineracao": 0.0013,
+        "oceano": 0.0002,
+        "pantano": 0.0004,
+        "planicie": 0.0013,
+        "vazio": 0.0007
+      },
+      "probabilidades_coroas": {
+        "0": 0.995,
+        "1": 0.0043,
+        "2": 0.0005,
+        "3": 0.0003
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "d",
+        "terreno": "deserto",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.9934,
+          "deserto": 0.0027,
+          "floresta": 0.0,
+          "mineracao": 0.0013,
+          "oceano": 0.0002,
+          "pantano": 0.0004,
+          "planicie": 0.0013,
+          "vazio": 0.0007
+        },
+        "coroas": {
+          "0": 0.995,
+          "1": 0.0043,
+          "2": 0.0005,
+          "3": 0.0003
+        },
+        "prob_terreno_real": 0.0027,
+        "prob_coroas_real": 0.995
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "p5",
+      "arquivo_origem": "p5.jpg",
+      "arquivo_celula": "p5_L1_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        1,
+        2
+      ],
+      "codigo_real": "p",
+      "terreno_real": "pantano",
+      "coroas_reais": 0,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.9923,
+      "confianca_coroas": 0.9987,
+      "confianca_combinada": 0.9923,
+      "probabilidades_terreno": {
+        "castelo": 0.9923,
+        "deserto": 0.0001,
+        "floresta": 0.0,
+        "mineracao": 0.0025,
+        "oceano": 0.0002,
+        "pantano": 0.0005,
+        "planicie": 0.0015,
+        "vazio": 0.0028
+      },
+      "probabilidades_coroas": {
+        "0": 0.9987,
+        "1": 0.0003,
+        "2": 0.0002,
+        "3": 0.0008
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "p",
+        "terreno": "pantano",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.9923,
+          "deserto": 0.0001,
+          "floresta": 0.0,
+          "mineracao": 0.0025,
+          "oceano": 0.0002,
+          "pantano": 0.0005,
+          "planicie": 0.0015,
+          "vazio": 0.0028
+        },
+        "coroas": {
+          "0": 0.9987,
+          "1": 0.0003,
+          "2": 0.0002,
+          "3": 0.0008
+        },
+        "prob_terreno_real": 0.0005,
+        "prob_coroas_real": 0.9987
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno"
+      ]
+    },
+    {
+      "prefixo": "p9",
+      "arquivo_origem": "p9.jpg",
+      "arquivo_celula": "p9_L1_C4.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        1,
+        4
+      ],
+      "codigo_real": "f",
+      "terreno_real": "floresta",
+      "coroas_reais": 0,
+      "codigo_predito": "f1",
+      "terreno_predito": "floresta",
+      "coroas_preditas": 1,
+      "confianca_terreno": 0.5701,
+      "confianca_coroas": 0.456,
+      "confianca_combinada": 0.456,
+      "probabilidades_terreno": {
+        "castelo": 0.2323,
+        "deserto": 0.0046,
+        "floresta": 0.5701,
+        "mineracao": 0.1288,
+        "oceano": 0.0342,
+        "pantano": 0.0073,
+        "planicie": 0.0201,
+        "vazio": 0.0026
+      },
+      "probabilidades_coroas": {
+        "0": 0.3775,
+        "1": 0.456,
+        "2": 0.1619,
+        "3": 0.0046
+      },
+      "proporcao_borda_preta": 0.001,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "f",
+        "terreno": "floresta",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "f1",
+        "terreno": "floresta",
+        "coroas": 1
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.2323,
+          "deserto": 0.0046,
+          "floresta": 0.5701,
+          "mineracao": 0.1288,
+          "oceano": 0.0342,
+          "pantano": 0.0073,
+          "planicie": 0.0201,
+          "vazio": 0.0026
+        },
+        "coroas": {
+          "0": 0.3775,
+          "1": 0.456,
+          "2": 0.1619,
+          "3": 0.0046
+        },
+        "prob_terreno_real": 0.5701,
+        "prob_coroas_real": 0.3775
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "photo4",
+      "arquivo_origem": "photo4.jpg",
+      "arquivo_celula": "photo4_L3_C2.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        3,
+        2
+      ],
+      "codigo_real": "m2",
+      "terreno_real": "mineracao",
+      "coroas_reais": 2,
+      "codigo_predito": "m3",
+      "terreno_predito": "mineracao",
+      "coroas_preditas": 3,
+      "confianca_terreno": 0.9905,
+      "confianca_coroas": 0.8193,
+      "confianca_combinada": 0.8193,
+      "probabilidades_terreno": {
+        "castelo": 0.0014,
+        "deserto": 0.0001,
+        "floresta": 0.0009,
+        "mineracao": 0.9905,
+        "oceano": 0.0005,
+        "pantano": 0.0031,
+        "planicie": 0.0027,
+        "vazio": 0.0009
+      },
+      "probabilidades_coroas": {
+        "0": 0.0117,
+        "1": 0.0064,
+        "2": 0.1627,
+        "3": 0.8193
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "m2",
+        "terreno": "mineracao",
+        "coroas": 2
+      },
+      "valor_predito": {
+        "codigo": "m3",
+        "terreno": "mineracao",
+        "coroas": 3
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0014,
+          "deserto": 0.0001,
+          "floresta": 0.0009,
+          "mineracao": 0.9905,
+          "oceano": 0.0005,
+          "pantano": 0.0031,
+          "planicie": 0.0027,
+          "vazio": 0.0009
+        },
+        "coroas": {
+          "0": 0.0117,
+          "1": 0.0064,
+          "2": 0.1627,
+          "3": 0.8193
+        },
+        "prob_terreno_real": 0.9905,
+        "prob_coroas_real": 0.1627
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "photo4",
+      "arquivo_origem": "photo4.jpg",
+      "arquivo_celula": "photo4_L4_C1.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        4,
+        1
+      ],
+      "codigo_real": "m2",
+      "terreno_real": "mineracao",
+      "coroas_reais": 2,
+      "codigo_predito": "m3",
+      "terreno_predito": "mineracao",
+      "coroas_preditas": 3,
+      "confianca_terreno": 0.9906,
+      "confianca_coroas": 0.5115,
+      "confianca_combinada": 0.5115,
+      "probabilidades_terreno": {
+        "castelo": 0.0023,
+        "deserto": 0.0001,
+        "floresta": 0.0034,
+        "mineracao": 0.9906,
+        "oceano": 0.0004,
+        "pantano": 0.0016,
+        "planicie": 0.0012,
+        "vazio": 0.0004
+      },
+      "probabilidades_coroas": {
+        "0": 0.0054,
+        "1": 0.0196,
+        "2": 0.4635,
+        "3": 0.5115
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "m2",
+        "terreno": "mineracao",
+        "coroas": 2
+      },
+      "valor_predito": {
+        "codigo": "m3",
+        "terreno": "mineracao",
+        "coroas": 3
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0023,
+          "deserto": 0.0001,
+          "floresta": 0.0034,
+          "mineracao": 0.9906,
+          "oceano": 0.0004,
+          "pantano": 0.0016,
+          "planicie": 0.0012,
+          "vazio": 0.0004
+        },
+        "coroas": {
+          "0": 0.0054,
+          "1": 0.0196,
+          "2": 0.4635,
+          "3": 0.5115
+        },
+        "prob_terreno_real": 0.9906,
+        "prob_coroas_real": 0.4635
+      },
+      "tipo_divergencia": "coroas",
+      "motivo_provavel": "erro_contagem_coroa",
+      "fatores_associados": [
+        "erro_contagem_coroa"
+      ]
+    },
+    {
+      "prefixo": "pic3554840",
+      "arquivo_origem": "pic3554840.webp",
+      "arquivo_celula": "pic3554840_L6_C4.jpg",
+      "lote": "lote_02",
+      "conjunto": "treino",
+      "posicao": [
+        6,
+        4
+      ],
+      "codigo_real": "v",
+      "terreno_real": "vazio",
+      "coroas_reais": 0,
+      "codigo_predito": "p",
+      "terreno_predito": "pantano",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.9566,
+      "confianca_coroas": 1.0,
+      "confianca_combinada": 0.9566,
+      "probabilidades_terreno": {
+        "castelo": 0.0002,
+        "deserto": 0.0006,
+        "floresta": 0.0001,
+        "mineracao": 0.0,
+        "oceano": 0.0003,
+        "pantano": 0.9566,
+        "planicie": 0.0003,
+        "vazio": 0.042
+      },
+      "probabilidades_coroas": {
+        "0": 1.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": false,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "v",
+        "terreno": "vazio",
+        "coroas": 0
+      },
+      "valor_predito": {
+        "codigo": "p",
+        "terreno": "pantano",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.0002,
+          "deserto": 0.0006,
+          "floresta": 0.0001,
+          "mineracao": 0.0,
+          "oceano": 0.0003,
+          "pantano": 0.9566,
+          "planicie": 0.0003,
+          "vazio": 0.042
+        },
+        "coroas": {
+          "0": 1.0,
+          "1": 0.0,
+          "2": 0.0,
+          "3": 0.0
+        },
+        "prob_terreno_real": 0.042,
+        "prob_coroas_real": 1.0
+      },
+      "tipo_divergencia": "terreno",
+      "motivo_provavel": "confusao_com_fundo_vazio",
+      "fatores_associados": [
+        "confusao_com_fundo_vazio"
+      ]
+    },
+    {
+      "prefixo": "pic3711927_webp",
+      "arquivo_origem": "pic3711927_webp.jpg",
+      "arquivo_celula": "pic3711927_webp_L2_C1.jpg",
+      "lote": "lote_01",
+      "conjunto": "treino",
+      "posicao": [
+        2,
+        1
+      ],
+      "codigo_real": "g1",
+      "terreno_real": "planicie",
+      "coroas_reais": 1,
+      "codigo_predito": "c",
+      "terreno_predito": "castelo",
+      "coroas_preditas": 0,
+      "confianca_terreno": 0.4385,
+      "confianca_coroas": 0.9154,
+      "confianca_combinada": 0.4385,
+      "probabilidades_terreno": {
+        "castelo": 0.4385,
+        "deserto": 0.0572,
+        "floresta": 0.01,
+        "mineracao": 0.1307,
+        "oceano": 0.0042,
+        "pantano": 0.0382,
+        "planicie": 0.3188,
+        "vazio": 0.0024
+      },
+      "probabilidades_coroas": {
+        "0": 0.9154,
+        "1": 0.0727,
+        "2": 0.0089,
+        "3": 0.003
+      },
+      "proporcao_borda_preta": 0.0,
+      "vizinha_ao_castelo": true,
+      "divergente": true,
+      "valor_real": {
+        "codigo": "g1",
+        "terreno": "planicie",
+        "coroas": 1
+      },
+      "valor_predito": {
+        "codigo": "c",
+        "terreno": "castelo",
+        "coroas": 0
+      },
+      "probabilidades_softmax": {
+        "terreno": {
+          "castelo": 0.4385,
+          "deserto": 0.0572,
+          "floresta": 0.01,
+          "mineracao": 0.1307,
+          "oceano": 0.0042,
+          "pantano": 0.0382,
+          "planicie": 0.3188,
+          "vazio": 0.0024
+        },
+        "coroas": {
+          "0": 0.9154,
+          "1": 0.0727,
+          "2": 0.0089,
+          "3": 0.003
+        },
+        "prob_terreno_real": 0.3188,
+        "prob_coroas_real": 0.0727
+      },
+      "tipo_divergencia": "terreno_e_coroas",
+      "motivo_provavel": "vizinha_ao_castelo",
+      "fatores_associados": [
+        "vizinha_ao_castelo",
+        "confusao_terreno_e_coroa"
+      ]
+    }
+  ]
+}

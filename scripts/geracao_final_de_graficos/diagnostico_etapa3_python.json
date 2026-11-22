@@ -1,0 +1,83 @@
+{
+  "cortes_x": [
+    0.0,
+    203.0,
+    402.0,
+    602.0,
+    798.0,
+    1000.0
+  ],
+  "cortes_y": [
+    0.0,
+    198.0,
+    401.0,
+    598.0,
+    790.0,
+    1000.0
+  ],
+  "shape_tensor_celulas": [
+    25,
+    3,
+    160,
+    160
+  ],
+  "estatisticas_tensor_global": {
+    "min": -1.998031,
+    "max": 2.64,
+    "media": 0.226642,
+    "desvio": 1.144374
+  },
+  "amostra_celulas": {
+    "0_0": {
+      "caixa_recorte_px": [
+        4,
+        4,
+        195,
+        190
+      ],
+      "proporcao_preto": 0.0,
+      "tensor_min": -1.804444,
+      "tensor_max": 1.925403,
+      "tensor_media": -0.679032,
+      "pixel_central_rgb": [
+        -0.936296,
+        -0.477591,
+        -0.706405
+      ]
+    },
+    "2_2": {
+      "caixa_recorte_px": [
+        406,
+        405,
+        192,
+        189
+      ],
+      "proporcao_preto": 0.0,
+      "tensor_min": -1.998031,
+      "tensor_max": 2.411064,
+      "tensor_media": -0.499123,
+      "pixel_central_rgb": [
+        -1.313041,
+        -1.072829,
+        -0.758693
+      ]
+    },
+    "4_4": {
+      "caixa_recorte_px": [
+        802,
+        794,
+        194,
+        202
+      ],
+      "proporcao_preto": 0.0,
+      "tensor_min": -1.804444,
+      "tensor_max": 2.428571,
+      "tensor_media": 1.03199,
+      "pixel_central_rgb": [
+        1.889288,
+        1.920868,
+        -0.758693
+      ]
+    }
+  }
+}

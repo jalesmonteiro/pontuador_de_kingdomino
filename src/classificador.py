@@ -33,7 +33,7 @@ _CACHE_CLASSIFICADOR_CELULAS = {}
 class ClassificadorCelulasKingdomino(nn.Module):
     """
     Classificador multi-tarefa (terreno + coroas) para células recortadas do Kingdomino.
-    Suporta backbones 'efficientnet_b0' e 'mobilenet_v3_small' com duas cabeças lineares paralelas.
+    Utiliza backbone EfficientNet-B0 com duas cabeças lineares paralelas.
     """
 
     def __init__(
@@ -47,18 +47,11 @@ class ClassificadorCelulasKingdomino(nn.Module):
         super().__init__()
         self.arquitetura = arquitetura
 
-        if arquitetura == "mobilenet_v3_small":
-            pesos = models.MobileNet_V3_Small_Weights.DEFAULT if pre_treinado else None
-            base = models.mobilenet_v3_small(weights=pesos)
-            self.extrator = base.features
-            self.agrupamento = base.avgpool
-            dim_caracteristicas = 576
-        else:
-            pesos = models.EfficientNet_B0_Weights.DEFAULT if pre_treinado else None
-            base = models.efficientnet_b0(weights=pesos)
-            self.extrator = base.features
-            self.agrupamento = base.avgpool
-            dim_caracteristicas = 1280
+        pesos = models.EfficientNet_B0_Weights.DEFAULT if pre_treinado else None
+        base = models.efficientnet_b0(weights=pesos)
+        self.extrator = base.features
+        self.agrupamento = base.avgpool
+        dim_caracteristicas = 1280
 
         self.normalizacao = nn.Sequential(
             nn.Flatten(start_dim=1),
@@ -114,12 +107,14 @@ def carregar_classificador_celulas(caminho_modelo=None, dispositivo=None):
     classes_terreno = pacote.get("classes_terreno", CLASSES_TERRENO)
     classes_coroas = pacote.get("classes_coroas", CLASSES_COROAS)
     tamanho_imagem = int(pacote.get("tamanho_imagem", 160))
+    taxa_dropout = float(pacote.get("dropout", 0.25))
 
     modelo = ClassificadorCelulasKingdomino(
         num_terrenos=len(classes_terreno),
         num_coroas=len(classes_coroas),
         arquitetura=arquitetura,
         pre_treinado=False,
+        taxa_dropout=taxa_dropout,
     )
     modelo.load_state_dict(pacote["estado_modelo"])
     modelo.to(disp)

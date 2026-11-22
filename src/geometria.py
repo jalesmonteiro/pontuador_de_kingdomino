@@ -4,19 +4,22 @@ import os
 import cv2
 import numpy as np
 from PIL import Image
-from rfdetr import RFDETRSegSmall
+from rfdetr import RFDETRSegNano
 
 
 CAMINHO_MODELO_PADRAO = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "modelos", "detector_tabuleiro_rfdetr.pth")
 )
 
+RESOLUCAO_DETECTOR_PADRAO = 564
+LIMIAR_CONFIANCA_PADRAO = 0.35
+
 _CACHE_MODELOS_TABULEIRO = {}
 
 
 def carregar_modelo_tabuleiro(caminho_modelo=None):
     """
-    Carrega o modelo RFDETRSegSmall(resolution=648) com cache em memória
+    Carrega o modelo RFDETRSegNano(resolution=564, num_classes=1) com cache em memória
     para evitar recarregamento a cada imagem processada.
     """
     caminho_alvo = caminho_modelo if caminho_modelo is not None else CAMINHO_MODELO_PADRAO
@@ -30,9 +33,9 @@ def carregar_modelo_tabuleiro(caminho_modelo=None):
             f"Arquivo de pesos do detector de tabuleiro não encontrado: {caminho_absoluto}"
         )
 
-    modelo = RFDETRSegSmall(
+    modelo = RFDETRSegNano(
         pretrain_weights=caminho_absoluto,
-        resolution=648,
+        resolution=RESOLUCAO_DETECTOR_PADRAO,
         num_classes=1,
     )
     _CACHE_MODELOS_TABULEIRO[caminho_absoluto] = modelo
@@ -280,11 +283,11 @@ def _calcular_centroide_mascara(mascara_binaria, caixa):
 def detectar_candidatos_tabuleiro(
     imagem,
     caminho_modelo=None,
-    limiar_confianca=0.5,
+    limiar_confianca=LIMIAR_CONFIANCA_PADRAO,
     area_minima_relativa=0.02,
 ):
     """
-    Detecta os tabuleiros na imagem usando RFDETRSegSmall, extrai as máscaras binárias,
+    Detecta os tabuleiros na imagem usando RFDETRSegNano, extrai as máscaras binárias,
     ranqueia combinando maior área da máscara e proximidade ao centro-inferior da imagem,
     elege o primeiro colocado como 'reino_principal' e marca os demais como 'reino_ignorado'.
     """
@@ -913,7 +916,7 @@ def processar_imagem_automatica(
     pasta_base_intermediarias="intermediarias",
     pasta_dataset_celulas="dataset_bruto_celulas",
     caminho_modelo=None,
-    limiar_confianca=0.5,
+    limiar_confianca=LIMIAR_CONFIANCA_PADRAO,
     linhas=None,
     colunas=None,
     tamanho_saida=None,

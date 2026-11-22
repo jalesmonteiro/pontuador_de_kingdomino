@@ -12,3 +12,4 @@ mlflow-skinny
 onnx
 onnxruntime
 onnxscript
+seaborn

@@ -1,0 +1,51 @@
+{
+  "quantidade_pontos_contorno": 170,
+  "metodo_ajuste_cantos": "simplificar_para_quadrilatero_busca_binaria + ransac_bordas_contorno_real_trava_15_graus_huber",
+  "vertices_4_cantos": [
+    [
+      135.26,
+      78.48
+    ],
+    [
+      355.42,
+      79.01
+    ],
+    [
+      394.36,
+      289.59
+    ],
+    [
+      116.03,
+      290.51
+    ]
+  ],
+  "dimensoes_homografia_preliminar": [
+    980,
+    980
+  ],
+  "grade_estimada": [
+    5,
+    5
+  ],
+  "dimensoes_homografia_final": [
+    1000,
+    1000
+  ],
+  "amostra_retificada": {
+    "pixel_0_0_bgr": [
+      120,
+      162,
+      170
+    ],
+    "pixel_central_bgr": [
+      55,
+      51,
+      44
+    ],
+    "media_canais_bgr": [
+      110.73,
+      141.41,
+      128.67
+    ]
+  }
+}

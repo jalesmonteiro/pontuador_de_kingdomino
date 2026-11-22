@@ -1,0 +1,943 @@
+{
+  "versao_baseline": "C0_D0_v2_85_imagens",
+  "modelos_avaliados": {
+    "detector_d0": "modelos/detector_tabuleiro_rfdetr.pth (RFDETRSegSmall, 648x648)",
+    "classificador_c0": "modelos/classificador_celulas.pth (MobileNetV3-Small Multi-Tarefa, 160x160)"
+  },
+  "validacao": {
+    "detector_d0": {
+      "total_imagens": 16,
+      "imagens_detectadas": 16,
+      "taxa_deteccao_pct": 100.0,
+      "iou_medio_mascara": 0.9801,
+      "erro_medio_cantos_px": 3.13,
+      "avaliacao_contra_anotacao_coco_humana": {
+        "quantidade_imagens_com_gt_coco": 9,
+        "iou_medio_mascara": 0.9801,
+        "iou_mediano_mascara": 0.983,
+        "iou_minimo_mascara": 0.953,
+        "erro_medio_cantos_px": 3.13,
+        "erro_mediano_cantos_px": 2.55,
+        "erro_maximo_cantos_px": 5.88
+      },
+      "avaliacao_hibrida_85_imagens_coco_e_cache": {
+        "quantidade_imagens_avaliadas": 16,
+        "iou_medio_mascara": 0.9888,
+        "erro_medio_cantos_px": 1.76,
+        "consistencia_cache_iou_medio": 1.0,
+        "consistencia_cache_erro_cantos_px": 0.0
+      }
+    },
+    "classificador_c0": {
+      "total_tabuleiros_avaliados": 16,
+      "total_celulas_avaliadas": 459,
+      "total_celulas_com_erro": 13,
+      "acuracia_terreno": 0.9804,
+      "acuracia_terreno_pct": 98.04,
+      "f1_macro_terreno": 0.9516,
+      "f1_por_classe_terreno": {
+        "castelo": 0.7895,
+        "deserto": 0.9917,
+        "floresta": 0.9901,
+        "mineracao": 1.0,
+        "oceano": 0.9939,
+        "pantano": 0.9877,
+        "planicie": 0.9848,
+        "vazio": 0.875
+      },
+      "acuracia_coroas": 0.9869,
+      "acuracia_coroas_pct": 98.69,
+      "f1_macro_coroas": 0.9363,
+      "f1_por_classe_coroas": {
+        "0": 0.9968,
+        "1": 0.982,
+        "2": 0.9091,
+        "3": 0.8571
+      },
+      "acuracia_celula_exata": 0.9717,
+      "acuracia_celula_exata_pct": 97.17,
+      "tabuleiros_100_perfeitos": 7,
+      "taxa_tabuleiros_perfeitos": 43.75,
+      "matriz_confusao_terreno": {
+        "ordem_classes": [
+          "castelo",
+          "deserto",
+          "floresta",
+          "mineracao",
+          "oceano",
+          "pantano",
+          "planicie",
+          "vazio"
+        ],
+        "matriz": [
+          [
+            15,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            119,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            2,
+            0,
+            100,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            23,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            81,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            40,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            65,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            7
+          ]
+        ]
+      },
+      "matriz_confusao_coroas": {
+        "ordem_classes": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "matriz": [
+          [
+            316,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            109,
+            2,
+            0
+          ],
+          [
+            1,
+            1,
+            25,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            3
+          ]
+        ]
+      },
+      "lista_tabuleiros_perfeitos": [
+        "71ebf_118238_jpg",
+        "81063_5vxxad_jpg",
+        "photo3",
+        "pic3389404_webp",
+        "pic3560652_webp",
+        "pic3575168_webp",
+        "pic3575173_webp"
+      ],
+      "lista_tabuleiros_com_erro": [
+        {
+          "prefixo": "0a120_111852_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "1401e_118235_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 24
+        },
+        {
+          "prefixo": "boardlife_1790867997390_1291_1000",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "boardlife_1794370024309_5598_1000",
+          "qtd_erros": 3,
+          "total_celulas": 49
+        },
+        {
+          "prefixo": "img_9027",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "p4",
+          "qtd_erros": 2,
+          "total_celulas": 22
+        },
+        {
+          "prefixo": "p7",
+          "qtd_erros": 2,
+          "total_celulas": 23
+        },
+        {
+          "prefixo": "pic3878199_webp",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "post_image_30f23a57-86ba-4ae4-a79e-415a940f137f",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        }
+      ]
+    }
+  },
+  "base_completa": {
+    "detector_d0": {
+      "total_imagens": 85,
+      "imagens_detectadas": 84,
+      "taxa_deteccao_pct": 98.82,
+      "iou_medio_mascara": 0.9747,
+      "erro_medio_cantos_px": 3.62,
+      "avaliacao_contra_anotacao_coco_humana": {
+        "quantidade_imagens_com_gt_coco": 49,
+        "iou_medio_mascara": 0.9747,
+        "iou_mediano_mascara": 0.9823,
+        "iou_minimo_mascara": 0.9041,
+        "erro_medio_cantos_px": 3.62,
+        "erro_mediano_cantos_px": 3.06,
+        "erro_maximo_cantos_px": 16.84
+      },
+      "avaliacao_hibrida_85_imagens_coco_e_cache": {
+        "quantidade_imagens_avaliadas": 84,
+        "iou_medio_mascara": 0.9853,
+        "erro_medio_cantos_px": 2.11,
+        "consistencia_cache_iou_medio": 1.0,
+        "consistencia_cache_erro_cantos_px": 0.0
+      }
+    },
+    "classificador_c0": {
+      "total_tabuleiros_avaliados": 82,
+      "total_celulas_avaliadas": 2240,
+      "total_celulas_com_erro": 37,
+      "acuracia_terreno": 0.9888,
+      "acuracia_terreno_pct": 98.88,
+      "f1_macro_terreno": 0.9724,
+      "f1_por_classe_terreno": {
+        "castelo": 0.9091,
+        "deserto": 0.9948,
+        "floresta": 0.993,
+        "mineracao": 1.0,
+        "oceano": 0.9976,
+        "pantano": 0.9894,
+        "planicie": 0.9897,
+        "vazio": 0.9057
+      },
+      "acuracia_coroas": 0.992,
+      "acuracia_coroas_pct": 99.2,
+      "f1_macro_coroas": 0.9712,
+      "f1_por_classe_coroas": {
+        "0": 0.9971,
+        "1": 0.9875,
+        "2": 0.9639,
+        "3": 0.9362
+      },
+      "acuracia_celula_exata": 0.9835,
+      "acuracia_celula_exata_pct": 98.35,
+      "tabuleiros_100_perfeitos": 56,
+      "taxa_tabuleiros_perfeitos": 68.29,
+      "matriz_confusao_terreno": {
+        "ordem_classes": [
+          "castelo",
+          "deserto",
+          "floresta",
+          "mineracao",
+          "oceano",
+          "pantano",
+          "planicie",
+          "vazio"
+        ],
+        "matriz": [
+          [
+            75,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            3,
+            576,
+            0,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            4,
+            0,
+            496,
+            0,
+            0,
+            0,
+            0,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            126,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0,
+            0,
+            418,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0,
+            0,
+            0,
+            187,
+            0,
+            1
+          ],
+          [
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            289,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            48
+          ]
+        ]
+      },
+      "matriz_confusao_coroas": {
+        "ordem_classes": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "matriz": [
+          [
+            1540,
+            3,
+            0,
+            0
+          ],
+          [
+            4,
+            513,
+            3,
+            0
+          ],
+          [
+            2,
+            3,
+            147,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            22
+          ]
+        ]
+      },
+      "lista_tabuleiros_perfeitos": [
+        "0c537_193580_jpg",
+        "1333010_71685667_b",
+        "1495640385-1064088126",
+        "1_jpg",
+        "20170816073317",
+        "39229_134214_jpg",
+        "49baa_89014_jpg",
+        "5cb55_300608_jpg",
+        "655436967_18344307310300547_5091903146801428119_n",
+        "689ae_125058_jpg",
+        "71ebf_118238_jpg",
+        "7f8a4_110855_jpg",
+        "81063_5vxxad_jpg",
+        "84b85_89017_jpg",
+        "DSCF1216",
+        "FRA8646_png",
+        "a8509_193579_jpg",
+        "ba365_118236_jpg",
+        "boardlife_1794370015480_7081_1000",
+        "ceb16_89013_jpg",
+        "e9d32_118237_jpg",
+        "edb17_89019_jpg",
+        "images3",
+        "p1",
+        "p10",
+        "p2",
+        "p6",
+        "p8",
+        "photo2",
+        "photo3",
+        "photo5",
+        "pic3341016_webp",
+        "pic3350780_webp",
+        "pic3389404_webp",
+        "pic3451287_webp",
+        "pic3487645_webp",
+        "pic3543554_webp",
+        "pic3560652_webp",
+        "pic3565989_webp",
+        "pic3575168_webp",
+        "pic3575169_webp",
+        "pic3575170_webp",
+        "pic3575173_webp",
+        "pic3610114_webp",
+        "pic3683618_webp",
+        "pic3714003_webp",
+        "pic3716017_webp",
+        "pic3716018_webp",
+        "pic3767106_webp",
+        "pic3829820_webp",
+        "pic3878189_webp",
+        "pic3878191_webp",
+        "pic3878193_webp",
+        "pic3878197_webp",
+        "pic3878198_webp",
+        "post_image_18ff8128-c061-4425-9b9a-f56f6ee9cfb7"
+      ],
+      "lista_tabuleiros_com_erro": [
+        {
+          "prefixo": "089f4_130364_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 29
+        },
+        {
+          "prefixo": "0a120_111852_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "1333010_64046572_b",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "1401e_118235_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 24
+        },
+        {
+          "prefixo": "52893_149608_jpeg",
+          "qtd_erros": 1,
+          "total_celulas": 24
+        },
+        {
+          "prefixo": "5fb647d7",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "DERJXjzV0AEU5rQ",
+          "qtd_erros": 2,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "ba18885158c5206547066ca5dc5c9ee3-scaled",
+          "qtd_erros": 3,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "boardlife_1790867997390_1291_1000",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "boardlife_1794370018416_3301_1000",
+          "qtd_erros": 2,
+          "total_celulas": 49
+        },
+        {
+          "prefixo": "boardlife_1794370024309_5598_1000",
+          "qtd_erros": 3,
+          "total_celulas": 49
+        },
+        {
+          "prefixo": "boardlife_1794370027431_2563_1000",
+          "qtd_erros": 2,
+          "total_celulas": 49
+        },
+        {
+          "prefixo": "d3d2c_177522_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 22
+        },
+        {
+          "prefixo": "e1b07_150241_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 42
+        },
+        {
+          "prefixo": "images",
+          "qtd_erros": 2,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "img_9027",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "p3",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "p4",
+          "qtd_erros": 2,
+          "total_celulas": 22
+        },
+        {
+          "prefixo": "p5",
+          "qtd_erros": 1,
+          "total_celulas": 24
+        },
+        {
+          "prefixo": "p7",
+          "qtd_erros": 2,
+          "total_celulas": 23
+        },
+        {
+          "prefixo": "p9",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "photo4",
+          "qtd_erros": 2,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "pic3554840",
+          "qtd_erros": 1,
+          "total_celulas": 49
+        },
+        {
+          "prefixo": "pic3711927_webp",
+          "qtd_erros": 1,
+          "total_celulas": 24
+        },
+        {
+          "prefixo": "pic3878199_webp",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "post_image_30f23a57-86ba-4ae4-a79e-415a940f137f",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        }
+      ]
+    }
+  },
+  "treino": {
+    "detector_d0": {
+      "total_imagens": 69,
+      "imagens_detectadas": 68,
+      "taxa_deteccao_pct": 98.55,
+      "iou_medio_mascara": 0.9735,
+      "erro_medio_cantos_px": 3.74,
+      "avaliacao_contra_anotacao_coco_humana": {
+        "quantidade_imagens_com_gt_coco": 40,
+        "iou_medio_mascara": 0.9735,
+        "iou_mediano_mascara": 0.9821,
+        "iou_minimo_mascara": 0.9041,
+        "erro_medio_cantos_px": 3.74,
+        "erro_mediano_cantos_px": 3.13,
+        "erro_maximo_cantos_px": 16.84
+      },
+      "avaliacao_hibrida_85_imagens_coco_e_cache": {
+        "quantidade_imagens_avaliadas": 68,
+        "iou_medio_mascara": 0.9844,
+        "erro_medio_cantos_px": 2.2,
+        "consistencia_cache_iou_medio": 1.0,
+        "consistencia_cache_erro_cantos_px": 0.0
+      }
+    },
+    "classificador_c0": {
+      "total_tabuleiros_avaliados": 66,
+      "total_celulas_avaliadas": 1781,
+      "total_celulas_com_erro": 24,
+      "acuracia_terreno": 0.991,
+      "acuracia_terreno_pct": 99.1,
+      "f1_macro_terreno": 0.9781,
+      "f1_por_classe_terreno": {
+        "castelo": 0.9449,
+        "deserto": 0.9956,
+        "floresta": 0.9937,
+        "mineracao": 1.0,
+        "oceano": 0.9985,
+        "pantano": 0.9899,
+        "planicie": 0.9912,
+        "vazio": 0.9111
+      },
+      "acuracia_coroas": 0.9933,
+      "acuracia_coroas_pct": 99.33,
+      "f1_macro_coroas": 0.978,
+      "f1_por_classe_coroas": {
+        "0": 0.9971,
+        "1": 0.989,
+        "2": 0.976,
+        "3": 0.95
+      },
+      "acuracia_celula_exata": 0.9865,
+      "acuracia_celula_exata_pct": 98.65,
+      "tabuleiros_100_perfeitos": 49,
+      "taxa_tabuleiros_perfeitos": 74.24,
+      "matriz_confusao_terreno": {
+        "ordem_classes": [
+          "castelo",
+          "deserto",
+          "floresta",
+          "mineracao",
+          "oceano",
+          "pantano",
+          "planicie",
+          "vazio"
+        ],
+        "matriz": [
+          [
+            60,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            457,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            2,
+            0,
+            396,
+            0,
+            0,
+            0,
+            0,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            103,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            337,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            147,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            41
+          ]
+        ]
+      },
+      "matriz_confusao_coroas": {
+        "ordem_classes": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "matriz": [
+          [
+            1224,
+            3,
+            0,
+            0
+          ],
+          [
+            3,
+            404,
+            1,
+            0
+          ],
+          [
+            1,
+            2,
+            122,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            19
+          ]
+        ]
+      },
+      "lista_tabuleiros_perfeitos": [
+        "0c537_193580_jpg",
+        "1333010_71685667_b",
+        "1495640385-1064088126",
+        "1_jpg",
+        "20170816073317",
+        "39229_134214_jpg",
+        "49baa_89014_jpg",
+        "5cb55_300608_jpg",
+        "655436967_18344307310300547_5091903146801428119_n",
+        "689ae_125058_jpg",
+        "7f8a4_110855_jpg",
+        "84b85_89017_jpg",
+        "DSCF1216",
+        "FRA8646_png",
+        "a8509_193579_jpg",
+        "ba365_118236_jpg",
+        "boardlife_1794370015480_7081_1000",
+        "ceb16_89013_jpg",
+        "e9d32_118237_jpg",
+        "edb17_89019_jpg",
+        "images3",
+        "p1",
+        "p10",
+        "p2",
+        "p6",
+        "p8",
+        "photo2",
+        "photo5",
+        "pic3341016_webp",
+        "pic3350780_webp",
+        "pic3451287_webp",
+        "pic3487645_webp",
+        "pic3543554_webp",
+        "pic3565989_webp",
+        "pic3575169_webp",
+        "pic3575170_webp",
+        "pic3610114_webp",
+        "pic3683618_webp",
+        "pic3714003_webp",
+        "pic3716017_webp",
+        "pic3716018_webp",
+        "pic3767106_webp",
+        "pic3829820_webp",
+        "pic3878189_webp",
+        "pic3878191_webp",
+        "pic3878193_webp",
+        "pic3878197_webp",
+        "pic3878198_webp",
+        "post_image_18ff8128-c061-4425-9b9a-f56f6ee9cfb7"
+      ],
+      "lista_tabuleiros_com_erro": [
+        {
+          "prefixo": "089f4_130364_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 29
+        },
+        {
+          "prefixo": "1333010_64046572_b",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "52893_149608_jpeg",
+          "qtd_erros": 1,
+          "total_celulas": 24
+        },
+        {
+          "prefixo": "5fb647d7",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "DERJXjzV0AEU5rQ",
+          "qtd_erros": 2,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "ba18885158c5206547066ca5dc5c9ee3-scaled",
+          "qtd_erros": 3,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "boardlife_1794370018416_3301_1000",
+          "qtd_erros": 2,
+          "total_celulas": 49
+        },
+        {
+          "prefixo": "boardlife_1794370027431_2563_1000",
+          "qtd_erros": 2,
+          "total_celulas": 49
+        },
+        {
+          "prefixo": "d3d2c_177522_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 22
+        },
+        {
+          "prefixo": "e1b07_150241_jpg",
+          "qtd_erros": 1,
+          "total_celulas": 42
+        },
+        {
+          "prefixo": "images",
+          "qtd_erros": 2,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "p3",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "p5",
+          "qtd_erros": 1,
+          "total_celulas": 24
+        },
+        {
+          "prefixo": "p9",
+          "qtd_erros": 1,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "photo4",
+          "qtd_erros": 2,
+          "total_celulas": 25
+        },
+        {
+          "prefixo": "pic3554840",
+          "qtd_erros": 1,
+          "total_celulas": 49
+        },
+        {
+          "prefixo": "pic3711927_webp",
+          "qtd_erros": 1,
+          "total_celulas": 24
+        }
+      ]
+    }
+  }
+}

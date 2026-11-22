@@ -1,0 +1,667 @@
+{
+  "nomes_saidas_onnx": [
+    "logits_terreno",
+    "logits_coroas"
+  ],
+  "shape_logits_terreno": [
+    25,
+    8
+  ],
+  "shape_logits_coroas": [
+    25,
+    4
+  ],
+  "celulas_detalhadas": [
+    {
+      "posicao": [
+        0,
+        0
+      ],
+      "logits_terreno": [
+        -0.4247,
+        -1.0907,
+        5.2703,
+        -0.3757,
+        -0.8851,
+        -1.5058,
+        -0.9551,
+        -0.5236
+      ],
+      "terreno_predito": "floresta",
+      "confianca_terreno": 0.9834,
+      "logits_coroas": [
+        3.4694,
+        -1.8672,
+        -1.3173,
+        -0.5835
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9704
+    },
+    {
+      "posicao": [
+        0,
+        1
+      ],
+      "logits_terreno": [
+        -0.4734,
+        -1.3424,
+        6.069,
+        -0.6423,
+        -1.0599,
+        -1.1329,
+        -0.8629,
+        -0.9166
+      ],
+      "terreno_predito": "floresta",
+      "confianca_terreno": 0.9933,
+      "logits_coroas": [
+        4.0858,
+        -2.3265,
+        -1.7181,
+        -0.8801
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9885
+    },
+    {
+      "posicao": [
+        0,
+        2
+      ],
+      "logits_terreno": [
+        -1.5096,
+        -0.4446,
+        -1.4037,
+        -1.265,
+        6.162,
+        -1.3829,
+        -0.1413,
+        -1.5615
+      ],
+      "terreno_predito": "lago",
+      "confianca_terreno": 0.9943,
+      "logits_coroas": [
+        -2.4325,
+        4.585,
+        -1.1416,
+        -1.3564
+      ],
+      "coroas_preditas": 1,
+      "confianca_coroas": 0.9933
+    },
+    {
+      "posicao": [
+        0,
+        3
+      ],
+      "logits_terreno": [
+        -1.0503,
+        -0.549,
+        -2.4493,
+        -0.9307,
+        4.3643,
+        -1.3376,
+        -1.4638,
+        -0.0967
+      ],
+      "terreno_predito": "lago",
+      "confianca_terreno": 0.9655,
+      "logits_coroas": [
+        2.6881,
+        -1.6778,
+        -0.9861,
+        -1.2497
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9456
+    },
+    {
+      "posicao": [
+        0,
+        4
+      ],
+      "logits_terreno": [
+        -1.2217,
+        -0.4421,
+        -3.204,
+        -1.2405,
+        6.2992,
+        -1.544,
+        -1.0604,
+        -1.7153
+      ],
+      "terreno_predito": "lago",
+      "confianca_terreno": 0.9963,
+      "logits_coroas": [
+        2.5205,
+        -0.5207,
+        -1.3028,
+        -2.0302
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9258
+    },
+    {
+      "posicao": [
+        1,
+        0
+      ],
+      "logits_terreno": [
+        -2.1333,
+        -2.0065,
+        -2.4433,
+        -0.1778,
+        6.2816,
+        -1.7141,
+        -0.3521,
+        -2.7206
+      ],
+      "terreno_predito": "lago",
+      "confianca_terreno": 0.996,
+      "logits_coroas": [
+        -2.4091,
+        4.4329,
+        -0.4745,
+        -1.8721
+      ],
+      "coroas_preditas": 1,
+      "confianca_coroas": 0.9898
+    },
+    {
+      "posicao": [
+        1,
+        1
+      ],
+      "logits_terreno": [
+        -2.5203,
+        -4.3138,
+        -1.2036,
+        6.7118,
+        -2.4909,
+        -1.0556,
+        -1.7855,
+        -1.7331
+      ],
+      "terreno_predito": "mina",
+      "confianca_terreno": 0.9986,
+      "logits_coroas": [
+        -3.8471,
+        -3.6934,
+        -0.1285,
+        6.8533
+      ],
+      "coroas_preditas": 3,
+      "confianca_coroas": 0.999
+    },
+    {
+      "posicao": [
+        1,
+        2
+      ],
+      "logits_terreno": [
+        -1.6716,
+        -1.8095,
+        -2.9873,
+        -0.9639,
+        6.2688,
+        -1.9646,
+        -0.6645,
+        -1.2126
+      ],
+      "terreno_predito": "lago",
+      "confianca_terreno": 0.9967,
+      "logits_coroas": [
+        4.0209,
+        -1.7203,
+        -2.1899,
+        -1.4231
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9905
+    },
+    {
+      "posicao": [
+        1,
+        3
+      ],
+      "logits_terreno": [
+        -1.0907,
+        -0.8318,
+        -2.7463,
+        -1.5095,
+        5.4956,
+        -1.7816,
+        -1.0132,
+        -0.03
+      ],
+      "terreno_predito": "lago",
+      "confianca_terreno": 0.9896,
+      "logits_coroas": [
+        3.7584,
+        -2.6066,
+        -1.839,
+        -1.1023
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.987
+    },
+    {
+      "posicao": [
+        1,
+        4
+      ],
+      "logits_terreno": [
+        -1.2874,
+        -2.2056,
+        -2.6387,
+        -0.8628,
+        -1.8962,
+        -0.6604,
+        -3.4028,
+        7.7207
+      ],
+      "terreno_predito": "vazio",
+      "confianca_terreno": 0.9993,
+      "logits_coroas": [
+        3.979,
+        -3.3814,
+        -1.7097,
+        -0.5645
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9856
+    },
+    {
+      "posicao": [
+        2,
+        0
+      ],
+      "logits_terreno": [
+        -1.4163,
+        -2.4224,
+        -2.4506,
+        -0.3309,
+        -1.8072,
+        -0.6929,
+        -2.675,
+        7.9877
+      ],
+      "terreno_predito": "vazio",
+      "confianca_terreno": 0.9994,
+      "logits_coroas": [
+        3.4831,
+        -3.0005,
+        -1.7618,
+        -0.3388
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9721
+    },
+    {
+      "posicao": [
+        2,
+        1
+      ],
+      "logits_terreno": [
+        -0.756,
+        5.3806,
+        -2.6235,
+        -0.4632,
+        -1.1442,
+        -1.2488,
+        0.079,
+        -0.8773
+      ],
+      "terreno_predito": "campo",
+      "confianca_terreno": 0.9851,
+      "logits_coroas": [
+        3.2905,
+        -2.153,
+        -2.023,
+        -0.898
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9762
+    },
+    {
+      "posicao": [
+        2,
+        2
+      ],
+      "logits_terreno": [
+        5.1444,
+        -2.059,
+        1.8754,
+        -1.5254,
+        -2.0455,
+        -1.2023,
+        -0.2022,
+        -1.6691
+      ],
+      "terreno_predito": "castelo",
+      "confianca_terreno": 0.9538,
+      "logits_coroas": [
+        3.6911,
+        -1.6865,
+        -1.7889,
+        -0.9762
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9821
+    },
+    {
+      "posicao": [
+        2,
+        3
+      ],
+      "logits_terreno": [
+        -0.8675,
+        -2.0884,
+        6.1191,
+        -0.395,
+        -1.3328,
+        -0.6955,
+        -0.7721,
+        -0.4331
+      ],
+      "terreno_predito": "floresta",
+      "confianca_terreno": 0.9932,
+      "logits_coroas": [
+        -1.572,
+        3.5927,
+        -1.0869,
+        -0.9019
+      ],
+      "coroas_preditas": 1,
+      "confianca_coroas": 0.9745
+    },
+    {
+      "posicao": [
+        2,
+        4
+      ],
+      "logits_terreno": [
+        -0.8754,
+        6.0937,
+        -2.903,
+        -0.7404,
+        -2.1962,
+        -0.4275,
+        -0.7562,
+        -1.5011
+      ],
+      "terreno_predito": "campo",
+      "confianca_terreno": 0.9946,
+      "logits_coroas": [
+        3.7318,
+        -2.5774,
+        -2.6128,
+        -0.9101
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.987
+    },
+    {
+      "posicao": [
+        3,
+        0
+      ],
+      "logits_terreno": [
+        -0.8476,
+        7.1791,
+        -3.2859,
+        -0.9239,
+        -1.5403,
+        -0.7662,
+        -1.3537,
+        -1.4215
+      ],
+      "terreno_predito": "campo",
+      "confianca_terreno": 0.9984,
+      "logits_coroas": [
+        4.0949,
+        -2.5695,
+        -2.737,
+        -1.4016
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9936
+    },
+    {
+      "posicao": [
+        3,
+        1
+      ],
+      "logits_terreno": [
+        -1.205,
+        5.9579,
+        -2.5518,
+        -0.8362,
+        -0.9403,
+        -1.2076,
+        -0.9367,
+        -0.4406
+      ],
+      "terreno_predito": "campo",
+      "confianca_terreno": 0.9935,
+      "logits_coroas": [
+        3.5286,
+        -2.193,
+        -2.2435,
+        -0.9237
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9823
+    },
+    {
+      "posicao": [
+        3,
+        2
+      ],
+      "logits_terreno": [
+        -0.3543,
+        -1.2536,
+        5.5298,
+        -0.6897,
+        -0.9536,
+        -1.401,
+        -0.9651,
+        -0.6788
+      ],
+      "terreno_predito": "floresta",
+      "confianca_terreno": 0.9882,
+      "logits_coroas": [
+        3.7614,
+        -1.9058,
+        -1.5711,
+        -0.683
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9804
+    },
+    {
+      "posicao": [
+        3,
+        3
+      ],
+      "logits_terreno": [
+        -0.3873,
+        -1.1659,
+        5.7843,
+        -0.5371,
+        -1.1024,
+        -1.2431,
+        -1.0895,
+        -0.9604
+      ],
+      "terreno_predito": "floresta",
+      "confianca_terreno": 0.9911,
+      "logits_coroas": [
+        3.7941,
+        -2.0958,
+        -1.4755,
+        -0.6967
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9812
+    },
+    {
+      "posicao": [
+        3,
+        4
+      ],
+      "logits_terreno": [
+        -0.8236,
+        -2.5248,
+        -1.7947,
+        0.0868,
+        -1.3281,
+        -1.3849,
+        7.0882,
+        -1.5506
+      ],
+      "terreno_predito": "pasto",
+      "confianca_terreno": 0.9979,
+      "logits_coroas": [
+        -2.5651,
+        -1.9813,
+        5.2987,
+        -1.3673
+      ],
+      "coroas_preditas": 2,
+      "confianca_coroas": 0.9977
+    },
+    {
+      "posicao": [
+        4,
+        0
+      ],
+      "logits_terreno": [
+        -0.7929,
+        -2.2207,
+        -1.6714,
+        -1.3867,
+        -1.3825,
+        6.5931,
+        -1.5164,
+        -0.9624
+      ],
+      "terreno_predito": "pantano",
+      "confianca_terreno": 0.9975,
+      "logits_coroas": [
+        3.8741,
+        -1.8145,
+        -1.9915,
+        -0.8205
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9849
+    },
+    {
+      "posicao": [
+        4,
+        1
+      ],
+      "logits_terreno": [
+        -0.6438,
+        -2.524,
+        6.939,
+        -0.9121,
+        -1.4531,
+        -1.0747,
+        -0.8463,
+        -0.6047
+      ],
+      "terreno_predito": "floresta",
+      "confianca_terreno": 0.9975,
+      "logits_coroas": [
+        -1.2181,
+        3.7791,
+        -1.6174,
+        -1.4244
+      ],
+      "coroas_preditas": 1,
+      "confianca_coroas": 0.9835
+    },
+    {
+      "posicao": [
+        4,
+        2
+      ],
+      "logits_terreno": [
+        -0.1714,
+        -1.043,
+        4.8606,
+        -0.5679,
+        -0.7864,
+        -1.6347,
+        -0.7894,
+        -0.3914
+      ],
+      "terreno_predito": "floresta",
+      "confianca_terreno": 0.9733,
+      "logits_coroas": [
+        3.3681,
+        -2.0113,
+        -1.3786,
+        -0.4559
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9661
+    },
+    {
+      "posicao": [
+        4,
+        3
+      ],
+      "logits_terreno": [
+        -0.8336,
+        5.7581,
+        -2.523,
+        -0.7228,
+        -1.2383,
+        -0.9359,
+        -0.1128,
+        -1.5469
+      ],
+      "terreno_predito": "campo",
+      "confianca_terreno": 0.9913,
+      "logits_coroas": [
+        3.6648,
+        -2.8478,
+        -2.421,
+        -0.975
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.9868
+    },
+    {
+      "posicao": [
+        4,
+        4
+      ],
+      "logits_terreno": [
+        -1.4782,
+        6.3023,
+        -2.2216,
+        -1.2366,
+        -1.1321,
+        -1.5409,
+        -0.8658,
+        -0.4987
+      ],
+      "terreno_predito": "campo",
+      "confianca_terreno": 0.996,
+      "logits_coroas": [
+        3.3948,
+        -1.2023,
+        -2.3682,
+        -1.0806
+      ],
+      "coroas_preditas": 0,
+      "confianca_coroas": 0.976
+    }
+  ],
+  "pontuacao_total": 31
+}

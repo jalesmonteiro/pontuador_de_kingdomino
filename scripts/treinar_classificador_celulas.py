@@ -288,7 +288,7 @@ def configurar_mlflow():
 
 
 def treinar_modelo(
-    arquitetura="mobilenet_v3_small",
+    arquitetura="efficientnet_b0",
     epocas=20,
     tamanho_lote=32,
     tamanho_imagem=160,
@@ -610,9 +610,9 @@ def interpretar_argumentos():
     )
     analisador.add_argument(
         "--arquitetura",
-        choices=["mobilenet_v3_small", "efficientnet_b0"],
-        default="mobilenet_v3_small",
-        help="Arquitetura base da rede (padrão: mobilenet_v3_small).",
+        choices=["efficientnet_b0"],
+        default="efficientnet_b0",
+        help="Arquitetura base da rede (padrão: efficientnet_b0).",
     )
     analisador.add_argument(
         "--epocas",

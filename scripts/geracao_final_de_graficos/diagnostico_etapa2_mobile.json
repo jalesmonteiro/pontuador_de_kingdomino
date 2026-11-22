@@ -1,0 +1,51 @@
+{
+  "quantidade_pontos_contorno": 109,
+  "metodo_ajuste_cantos": "BuscaBinariaApproxPolyDP",
+  "vertices_4_cantos": [
+    [
+      138.0,
+      80.0
+    ],
+    [
+      355.0,
+      80.0
+    ],
+    [
+      395.0,
+      289.0
+    ],
+    [
+      118.0,
+      289.0
+    ]
+  ],
+  "dimensoes_homografia_preliminar": [
+    980,
+    980
+  ],
+  "grade_estimada": [
+    5,
+    5
+  ],
+  "dimensoes_homografia_final": [
+    1000,
+    1000
+  ],
+  "amostra_retificada": {
+    "pixel_0_0_bgr": [
+      55,
+      97,
+      79
+    ],
+    "pixel_central_bgr": [
+      63,
+      53,
+      44
+    ],
+    "media_canais_bgr": [
+      110.73,
+      141.6,
+      128.73
+    ]
+  }
+}

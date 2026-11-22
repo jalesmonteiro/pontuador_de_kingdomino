@@ -134,7 +134,7 @@ def executar_lote_dataset(
                 pasta_base_intermediarias=pasta_intermediarias,
                 pasta_dataset_celulas=pasta_celulas,
                 caminho_modelo=None,
-                limiar_confianca=0.5,
+                limiar_confianca=0.35,
                 linhas=None,
                 colunas=None,
                 tamanho_saida=None,
