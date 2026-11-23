@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rotulador Visual de Tabuleiros — Kingdomino</title>
-  <link rel="stylesheet" href="/static/estilo.css?v=5" />
+  <link rel="stylesheet" href="/static/estilo.css?v=8" />
 </head>
 <body>
   <div id="recipiente-toasts" class="recipiente-toasts" aria-live="polite"></div>
@@ -382,53 +382,79 @@
     </section>
   </main>
 
-  <!-- ABA 4: COMPARAR CANTOS (BENCHMARK VISUAL DOS 6 ALGORITMOS) -->
+  <!-- ABA 4: COMPARAR CANTOS (BENCHMARK VISUAL DOS 7 ALGORITMOS) -->
   <main id="visao-cantos" class="painel-ajustes-container oculto">
-    <section class="painel barra-filtros-ajustes">
-      <div class="grupo-filtros-ajustes">
-        <button id="botao-executar-comparacao-cantos" type="button" class="botao botao-primario">
-          ▶ Executar Comparação (20 imagens)
-        </button>
+    <details id="gaveta-topo-cantos" class="secao-classe gaveta-topo-cantos" open>
+      <summary>
+        <div class="cabecalho-secao-info">
+          <span>⚙️ Controles, Colunas Visíveis e Resumo Estatístico</span>
+        </div>
+        <div class="resumo-gaveta-topo-direita">
+          <span id="status-progresso-cantos" class="resumo-contagem-ajustes">
+            Pronto para comparar algoritmos em dados/cantos/
+          </span>
+          <span class="subtitulo">Clique para expandir/contrair</span>
+        </div>
+      </summary>
 
-        <div class="alternador-layout-teclado" role="group" aria-label="Modo de visualização das miniaturas">
-          <button
-            id="botao-modo-visao-cantos"
-            type="button"
-            class="botao-alternador ativo"
-            data-visao="cantos"
-          >
-            Cantos na Foto
-          </button>
-          <button
-            id="botao-modo-visao-homografia"
-            type="button"
-            class="botao-alternador"
-            data-visao="homografia"
-          >
-            Homografia Retificada
-          </button>
+      <div class="corpo-gaveta-topo-cantos">
+        <div class="barra-filtros-ajustes linha-controles-gaveta-cantos">
+          <div class="grupo-filtros-ajustes">
+            <button id="botao-executar-comparacao-cantos" type="button" class="botao botao-primario">
+              ▶ Executar Comparação (20 imagens)
+            </button>
+
+            <div class="alternador-layout-teclado" role="group" aria-label="Modo de visualização das miniaturas">
+              <button
+                id="botao-modo-visao-cantos"
+                type="button"
+                class="botao-alternador ativo"
+                data-visao="cantos"
+              >
+                Cantos na Foto
+              </button>
+              <button
+                id="botao-modo-visao-homografia"
+                type="button"
+                class="botao-alternador"
+                data-visao="homografia"
+              >
+                Homografia Retificada
+              </button>
+            </div>
+
+            <label class="checkbox-filtro">
+              <input type="checkbox" id="check-forcar-deteccao-cantos" />
+              <span>Forçar nova detecção RF-DETR</span>
+            </label>
+          </div>
         </div>
 
-        <label class="checkbox-filtro">
-          <input type="checkbox" id="check-forcar-deteccao-cantos" />
-          <span>Forçar nova detecção RF-DETR</span>
-        </label>
-      </div>
+        <div class="barra-seletor-colunas-cantos">
+          <div class="cabecalho-seletor-colunas">
+            <span class="rotulo-seletor-colunas">Colunas visíveis:</span>
+            <div class="acoes-rapidas-colunas">
+              <button id="botao-marcar-todas-colunas-cantos" type="button" class="botao-link-colunas">
+                Marcar todas
+              </button>
+              <span class="separador-links-colunas">•</span>
+              <button id="botao-apenas-ransac-colunas-cantos" type="button" class="botao-link-colunas">
+                Apenas RANSAC / Top
+              </button>
+            </div>
+          </div>
+          <div id="lista-checkboxes-colunas-cantos" class="lista-checkboxes-colunas-cantos"></div>
+        </div>
 
-      <div class="acoes-topo-ajustes">
-        <span id="status-progresso-cantos" class="resumo-contagem-ajustes">
-          Pronto para comparar algoritmos em dados/cantos/
-        </span>
+        <div id="painel-resumo-estatistico-cantos" class="bloco-resumo-interno-cantos oculto">
+          <div class="cabecalho-painel">
+            <h3>Resumo Estatístico por Método (Médias das Imagens Marcadas)</h3>
+            <span class="subtitulo">Cobertura &lt; 95% indica corte do tabuleiro; Razão de área &gt; 1.05 reconstrói quina vazia</span>
+          </div>
+          <div id="grade-resumo-metodos-cantos" class="grade-resumo-metodos-cantos"></div>
+        </div>
       </div>
-    </section>
-
-    <section id="painel-resumo-estatistico-cantos" class="painel painel-resumo-cantos oculto">
-      <div class="cabecalho-painel">
-        <h3>Resumo Estatístico por Método (Médias das Imagens Processadas)</h3>
-        <span class="subtitulo">Cobertura &lt; 95% indica corte do tabuleiro; Razão de área &gt; 1.05 reconstrói quina vazia</span>
-      </div>
-      <div id="grade-resumo-metodos-cantos" class="grade-resumo-metodos-cantos"></div>
-    </section>
+    </details>
 
     <section class="painel recipiente-tabela-cantos">
       <div class="envoltorio-rolagem-tabela-cantos">
@@ -436,8 +462,8 @@
           <thead id="cabecalho-tabela-cantos"></thead>
           <tbody id="corpo-tabela-cantos">
             <tr>
-              <td colspan="7" class="mensagem-vazia celula-vazia-cantos">
-                Clique em "Executar Comparação (20 imagens)" para processar e visualizar os 6 algoritmos lado a lado.
+              <td colspan="8" class="mensagem-vazia celula-vazia-cantos">
+                Clique em "Executar Comparação (20 imagens)" para processar e visualizar os 7 algoritmos lado a lado.
               </td>
             </tr>
           </tbody>
@@ -519,6 +545,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=9"></script>
+  <script src="/static/app.js?v=11"></script>
 </body>
 </html>

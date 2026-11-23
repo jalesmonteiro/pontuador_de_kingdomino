@@ -1106,6 +1106,136 @@ body {
 }
 
 /* ==================== ABA 4: COMPARAR CANTOS ==================== */
+#visao-cantos {
+  flex: 1;
+  min-height: 0;
+  max-height: calc(100vh - 68px);
+}
+
+.gaveta-topo-cantos {
+  flex-shrink: 0;
+}
+
+.resumo-gaveta-topo-direita {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.corpo-gaveta-topo-cantos {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.linha-controles-gaveta-cantos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.bloco-resumo-interno-cantos {
+  border-top: 1px solid var(--cor-borda);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.barra-seletor-colunas-cantos {
+  width: 100%;
+  border-top: 1px solid var(--cor-borda);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cabecalho-seletor-colunas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rotulo-seletor-colunas {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--cor-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.acoes-rapidas-colunas {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.botao-link-colunas {
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.botao-link-colunas:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+.separador-links-colunas {
+  color: var(--cor-texto-suave);
+  font-size: 0.75rem;
+}
+
+.lista-checkboxes-colunas-cantos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill-coluna-cantos {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #0f172a;
+  border: 1px solid var(--cor-borda);
+  color: var(--cor-texto-suave);
+  padding: 5px 10px;
+  border-radius: 999px;
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pill-coluna-cantos:hover {
+  border-color: #60a5fa;
+  color: var(--cor-texto);
+}
+
+.pill-coluna-cantos.ativa {
+  background-color: rgba(37, 99, 235, 0.2);
+  border-color: #3b82f6;
+  color: #f1f5f9;
+}
+
+.pill-coluna-cantos input {
+  accent-color: var(--cor-primaria);
+  cursor: pointer;
+}
+
 .painel-resumo-cantos {
   padding: 12px 14px;
 }
@@ -1141,15 +1271,20 @@ body {
 }
 
 .recipiente-tabela-cantos {
+  flex: 1;
+  min-height: 0;
   padding: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .envoltorio-rolagem-tabela-cantos {
+  flex: 1;
   width: 100%;
   overflow-x: auto;
   overflow-y: auto;
-  max-height: calc(100vh - 230px);
+  max-height: calc(100vh - 150px);
   scroll-behavior: smooth;
 }
 
@@ -1157,7 +1292,6 @@ body {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 1280px;
 }
 
 .tabela-comparacao-cantos th,
@@ -1217,11 +1351,54 @@ body {
   gap: 6px;
 }
 
+.rotulo-check-imagem-cantos {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-imagem-cantos {
+  margin-top: 2px;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--cor-primaria);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .nome-arquivo-cantos {
   font-size: 0.84rem;
   font-weight: 700;
   color: var(--cor-texto);
   word-break: break-all;
+}
+
+.linha-imagem-desmarcada {
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+.linha-imagem-desmarcada:hover {
+  opacity: 0.8;
+}
+
+.linha-imagem-desmarcada .nome-arquivo-cantos {
+  text-decoration: line-through;
+  color: var(--cor-texto-suave);
+}
+
+.cabecalho-coluna-imagem-cantos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.acoes-cabecalho-imagem-cantos {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .meta-arquivo-cantos {

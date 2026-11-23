@@ -1,4 +1,5 @@
 import base64
+import itertools
 import os
 import time
 import cv2
@@ -45,6 +46,11 @@ METADADOS_METODOS = [
         "id": "hough_quatro_lados",
         "nome": "Hough Probabilístico + FitLine",
         "descricao": "Desenha o contorno fino em máscara binária, detecta segmentos via HoughLinesP, separa em 2 famílias ortogonais e 4 lados opostos, ajustando com DIST_L12.",
+    },
+    {
+        "id": "ransac_peeling_projetivo",
+        "nome": "RANSAC Peeling Projetivo — Top-K + Quarteto",
+        "descricao": "Extrai até 8 retas candidatas via peeling RANSAC + Huber e seleciona o quarteto ótimo com IoU da máscara, inliers e consistência angular (opostos <= 42°, ângulos [48°, 132°], cobertura >= 95%).",
     },
 ]
 
@@ -558,6 +564,309 @@ def hough_quatro_lados(contorno, mascara=None):
     return vertices
 
 
+def ransac_peeling_projetivo(contorno, mascara=None):
+    pts_contorno = contorno.reshape(-1, 2).astype(np.float32)
+    num_pts = len(pts_contorno)
+    if num_pts < 4:
+        return ransac_sequencial_contorno(contorno, mascara)
+
+    pontos_densos = []
+    for i in range(num_pts):
+        p1 = pts_contorno[i]
+        p2 = pts_contorno[(i + 1) % num_pts]
+        dist = float(np.linalg.norm(p2 - p1))
+        passos = max(2, int(dist / 2.0))
+        for alfa in np.linspace(0.0, 1.0, passos, endpoint=False):
+            pontos_densos.append(p1 * (1.0 - alfa) + p2 * alfa)
+
+    total_pontos = len(pontos_densos)
+    if total_pontos < 40:
+        return ransac_sequencial_contorno(contorno, mascara)
+
+    centro = _centroide_contorno(contorno)
+    perimetro = float(cv2.arcLength(contorno, True))
+    limiar_inlier = max(3.0, min(8.0, perimetro * 0.004))
+    limiar_remocao = limiar_inlier * 1.65
+    minimo_restantes = max(12, int(0.05 * total_pontos))
+
+    def extrair_retas_peeling(qtd_alvo, exigir_separacao_angular):
+        restantes_loc = np.array(pontos_densos, dtype=np.float32)
+        rng_loc = np.random.default_rng(42)
+        lista_retas = []
+        angulos_vistos = []
+
+        for _ in range(qtd_alvo):
+            n_rest = len(restantes_loc)
+            if n_rest < minimo_restantes:
+                break
+
+            melhor_inliers = None
+            melhor_pontuacao_r = -1.0
+            max_inliers = -1
+
+            for _ in range(220):
+                idx = rng_loc.choice(n_rest, size=2, replace=False)
+                p1 = restantes_loc[idx[0]]
+                p2 = restantes_loc[idx[1]]
+                vetor = p2 - p1
+                norma = float(np.linalg.norm(vetor))
+                if norma < 10.0:
+                    continue
+                direcao = vetor / norma
+                normal = np.array([-direcao[1], direcao[0]], dtype=np.float32)
+                meio = 0.5 * (p1 + p2)
+                if float(np.dot(meio - centro, normal)) < 0:
+                    normal = -normal
+                ang_n = float(np.arctan2(normal[1], normal[0]))
+
+                if exigir_separacao_angular:
+                    muito_proximo = False
+                    for ang_existente in angulos_vistos:
+                        if np.degrees(_diferenca_angular_orientada(ang_n, ang_existente)) < 45.0:
+                            muito_proximo = True
+                            break
+                    if muito_proximo:
+                        continue
+
+                distancias = np.abs(np.dot(restantes_loc - p1, normal))
+                mascara_in = distancias <= limiar_inlier
+                qtd_in = int(np.sum(mascara_in))
+                if qtd_in < 10:
+                    continue
+
+                pontuacao_r = float(qtd_in)
+                if exigir_separacao_angular and angulos_vistos:
+                    ang_ref = angulos_vistos[0]
+                    dif_ref = np.degrees(_diferenca_angular_orientada(ang_n, ang_ref))
+                    desvio_ideal = min(abs(dif_ref - 90.0), abs(dif_ref - 180.0))
+                    if desvio_ideal < 25.0:
+                        pontuacao_r *= 1.15
+
+                if pontuacao_r > melhor_pontuacao_r:
+                    melhor_pontuacao_r = pontuacao_r
+                    melhor_inliers = mascara_in
+                    max_inliers = qtd_in
+
+            if melhor_inliers is None or max_inliers < 10:
+                break
+
+            pts_inliers = restantes_loc[melhor_inliers]
+            reta = cv2.fitLine(pts_inliers, cv2.DIST_HUBER, 0, 0.01, 0.01)
+            vx, vy, x0, y0 = [float(v) for v in reta.flatten()[:4]]
+            dir_unit = np.array([vx, vy], dtype=np.float32)
+            norma_d = float(np.linalg.norm(dir_unit))
+            if norma_d < 1e-6:
+                break
+            dir_unit = dir_unit / norma_d
+
+            normal_ext = np.array([-dir_unit[1], dir_unit[0]], dtype=np.float32)
+            ponto_reta = np.array([x0, y0], dtype=np.float32)
+            if float(np.dot(ponto_reta - centro, normal_ext)) < 0:
+                normal_ext = -normal_ext
+            ang_normal = float(np.arctan2(normal_ext[1], normal_ext[0]))
+
+            dist_ref = np.abs(np.dot(restantes_loc - ponto_reta, normal_ext))
+            mascara_refinada = dist_ref <= limiar_inlier
+            qtd_inliers_ref = max(int(max_inliers), int(np.sum(mascara_refinada)))
+
+            lista_retas.append({
+                "reta": reta,
+                "direcao": dir_unit,
+                "normal": normal_ext,
+                "ang_normal": ang_normal,
+                "qtd_inliers": qtd_inliers_ref,
+            })
+            angulos_vistos.append(ang_normal)
+            restantes_loc = restantes_loc[dist_ref > limiar_remocao]
+
+        return lista_retas
+
+    candidatas = extrair_retas_peeling(8, False)
+    quarteto_base_separado = extrair_retas_peeling(4, True)
+
+    if len(candidatas) < 4 and len(quarteto_base_separado) < 4:
+        return ransac_sequencial_contorno(contorno, mascara)
+
+    if mascara is not None and mascara.ndim >= 2:
+        altura_img, largura_img = mascara.shape[:2]
+        mascara_bin = mascara > 0
+        pixels_mascara = int(np.count_nonzero(mascara_bin))
+    else:
+        x_min_c, y_min_c = np.min(pts_contorno, axis=0)
+        x_max_c, y_max_c = np.max(pts_contorno, axis=0)
+        largura_img = int(max(100, x_max_c + abs(x_min_c)))
+        altura_img = int(max(100, y_max_c + abs(y_min_c)))
+        mascara_gerada = np.zeros((altura_img, largura_img), dtype=np.uint8)
+        cv2.drawContours(mascara_gerada, [contorno], -1, 255, -1)
+        mascara_bin = mascara_gerada > 0
+        pixels_mascara = int(np.count_nonzero(mascara_bin))
+
+    if pixels_mascara <= 0:
+        return ransac_sequencial_contorno(contorno, mascara)
+
+    ys_mascara, xs_mascara = np.nonzero(mascara_bin)
+    pts_mascara = np.column_stack((xs_mascara, ys_mascara)).astype(np.float32)
+    if len(pts_mascara) > 8000:
+        passo_amostra = max(1, len(pts_mascara) // 8000)
+        pts_mascara_amostra = pts_mascara[::passo_amostra]
+    else:
+        pts_mascara_amostra = pts_mascara
+    total_amostra_mascara = float(len(pts_mascara_amostra))
+
+    lim_x_min = -0.35 * float(largura_img)
+    lim_x_max = 1.35 * float(largura_img)
+    lim_y_min = -0.35 * float(altura_img)
+    lim_y_max = 1.35 * float(altura_img)
+
+    # Garante que o quarteto base (4 primeiras retas do peeling) seja sempre o primeiro avaliado
+    lista_quartetos = []
+    if len(candidatas) >= 4:
+        lista_quartetos.append(tuple(candidatas[:4]))
+    if len(quarteto_base_separado) == 4:
+        lista_quartetos.append(tuple(quarteto_base_separado))
+    if len(candidatas) >= 4:
+        for comb in itertools.combinations(candidatas, 4):
+            lista_quartetos.append(comb)
+
+    melhor_vertices = None
+    melhor_pontuacao = -1e9
+    mascara_quad_buffer = np.zeros((altura_img, largura_img), dtype=np.uint8)
+
+    for quarteto in lista_quartetos:
+        ordenadas = sorted(quarteto, key=lambda item: item["ang_normal"])
+
+        angulos_validos = True
+        for i in range(4):
+            a1 = ordenadas[i]["ang_normal"]
+            a2 = ordenadas[(i + 1) % 4]["ang_normal"]
+            if np.degrees(_diferenca_angular_orientada(a1, a2)) < 25.0:
+                angulos_validos = False
+                break
+        if not angulos_validos:
+            continue
+
+        cantos = []
+        intersecao_valida = True
+        for i in range(4):
+            inter = _intersecao_duas_retas(
+                ordenadas[i]["reta"], ordenadas[(i + 1) % 4]["reta"]
+            )
+            if inter is None:
+                intersecao_valida = False
+                break
+            ix, iy = float(inter[0]), float(inter[1])
+            if (
+                ix < lim_x_min
+                or ix > lim_x_max
+                or iy < lim_y_min
+                or iy > lim_y_max
+            ):
+                intersecao_valida = False
+                break
+            cantos.append(inter)
+
+        if not intersecao_valida:
+            continue
+
+        verts = ordenar_vertices(cantos)
+        poly_cv = verts.reshape(-1, 1, 2).astype(np.float32)
+        if not cv2.isContourConvex(poly_cv):
+            continue
+
+        v_lado0 = verts[1] - verts[0]
+        v_lado1 = verts[2] - verts[1]
+        v_lado2 = verts[3] - verts[2]
+        v_lado3 = verts[0] - verts[3]
+
+        if (
+            float(np.linalg.norm(v_lado0)) < 15.0
+            or float(np.linalg.norm(v_lado1)) < 15.0
+            or float(np.linalg.norm(v_lado2)) < 15.0
+            or float(np.linalg.norm(v_lado3)) < 15.0
+        ):
+            continue
+
+        desvio_par_0_2 = _diferenca_angular_direcoes(v_lado0, v_lado2)
+        desvio_par_1_3 = _diferenca_angular_direcoes(v_lado1, v_lado3)
+        if desvio_par_0_2 > 42.0 or desvio_par_1_3 > 42.0:
+            continue
+
+        angulos_internos_ok = True
+        for i in range(4):
+            p_ant = verts[(i - 1) % 4]
+            p_atual = verts[i]
+            p_prox = verts[(i + 1) % 4]
+            va = p_ant - p_atual
+            vb = p_prox - p_atual
+            na = float(np.linalg.norm(va))
+            nb = float(np.linalg.norm(vb))
+            cos_int = float(np.clip(np.dot(va, vb) / (na * nb + 1e-6), -1.0, 1.0))
+            ang_int = float(np.degrees(np.arccos(cos_int)))
+            if ang_int < 48.0 or ang_int > 132.0:
+                angulos_internos_ok = False
+                break
+
+        if not angulos_internos_ok:
+            continue
+
+        area_quad = float(cv2.contourArea(poly_cv))
+        razao_area = area_quad / float(pixels_mascara)
+        if razao_area < 0.85 or razao_area > 2.2:
+            continue
+
+        # Pré-filtro vetorial rápido de cobertura da máscara
+        dentro = np.ones(len(pts_mascara_amostra), dtype=bool)
+        for i in range(4):
+            a = verts[i]
+            b = verts[(i + 1) % 4]
+            ab = b - a
+            cruz = (
+                ab[0] * (pts_mascara_amostra[:, 1] - a[1])
+                - ab[1] * (pts_mascara_amostra[:, 0] - a[0])
+            )
+            dentro &= cruz >= -1.0
+
+        cobertura_estimada = (float(np.count_nonzero(dentro)) / total_amostra_mascara) * 100.0
+        if cobertura_estimada < 94.2:
+            continue
+
+        mascara_quad_buffer.fill(0)
+        pts_int = np.round(verts).astype(np.int32).reshape(-1, 1, 2)
+        cv2.fillPoly(mascara_quad_buffer, [pts_int], 255)
+        quad_bin = mascara_quad_buffer > 0
+
+        pixels_intersecao = int(np.count_nonzero(mascara_bin & quad_bin))
+        cobertura_real = (float(pixels_intersecao) / float(pixels_mascara)) * 100.0
+        if cobertura_real < 95.0:
+            continue
+
+        pixels_uniao = int(np.count_nonzero(mascara_bin | quad_bin))
+        if pixels_uniao <= 0:
+            continue
+        iou_quad = float(pixels_intersecao) / float(pixels_uniao)
+
+        soma_inliers = sum(item["qtd_inliers"] for item in quarteto)
+        soma_inliers_normalizada = float(soma_inliers) / float(total_pontos)
+
+        desvio_opostos_medio = 0.5 * (desvio_par_0_2 + desvio_par_1_3)
+        consistencia_angular = max(0.0, 1.0 - (desvio_opostos_medio / 45.0))
+
+        pontuacao = (
+            0.50 * iou_quad
+            + 0.35 * soma_inliers_normalizada
+            + 0.15 * consistencia_angular
+        )
+
+        if pontuacao > melhor_pontuacao:
+            melhor_pontuacao = pontuacao
+            melhor_vertices = verts
+
+    if melhor_vertices is None:
+        return ransac_sequencial_contorno(contorno, mascara)
+
+    return melhor_vertices
+
+
 MAPA_FUNCOES_METODOS = {
     "atual_ransac_huber": atual_ransac_huber,
     "hull_busca_binaria": hull_busca_binaria,
@@ -565,6 +874,7 @@ MAPA_FUNCOES_METODOS = {
     "quatro_maiores_arestas": quatro_maiores_arestas,
     "ransac_sequencial_contorno": ransac_sequencial_contorno,
     "hough_quatro_lados": hough_quatro_lados,
+    "ransac_peeling_projetivo": ransac_peeling_projetivo,
 }
 
 

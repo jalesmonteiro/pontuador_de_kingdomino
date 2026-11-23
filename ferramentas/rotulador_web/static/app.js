@@ -17,6 +17,8 @@ const estadoAplicacao = {
   cantosModoVisao: "cantos",
   cantosEmExecucao: false,
   cantosMetaCarregada: false,
+  cantosColunasOcultas: new Set(),
+  cantosImagensDesmarcadas: new Set(),
 };
 
 const CODIGOS_COM_COROA = new Set(["f", "d", "o", "g", "p", "m"]);
@@ -1173,6 +1175,86 @@ async function baixarDiagnosticoEtapa(endpoint, nomeArquivo, idBotao) {
 
 /* ==================== ABA 4: COMPARAR CANTOS ==================== */
 
+function metodoCantosEstaVisivel(idMetodo) {
+  return !estadoAplicacao.cantosColunasOcultas.has(idMetodo);
+}
+
+function salvarPreferenciaColunasCantos() {
+  try {
+    const listaOcultas = Array.from(estadoAplicacao.cantosColunasOcultas);
+    localStorage.setItem("cantos_colunas_ocultas", JSON.stringify(listaOcultas));
+  } catch (_) {}
+}
+
+function carregarPreferenciaColunasCantos() {
+  try {
+    const salvo = localStorage.getItem("cantos_colunas_ocultas");
+    if (salvo) {
+      const lista = JSON.parse(salvo);
+      if (Array.isArray(lista)) {
+        estadoAplicacao.cantosColunasOcultas = new Set(lista);
+      }
+    }
+  } catch (_) {}
+}
+
+function aplicarVisibilidadeColunasCantos() {
+  document.querySelectorAll("[data-coluna-metodo]").forEach((el) => {
+    const idMetodo = el.dataset.colunaMetodo;
+    el.classList.toggle("oculto", !metodoCantosEstaVisivel(idMetodo));
+  });
+
+  document.querySelectorAll(".pill-coluna-cantos").forEach((pill) => {
+    const idMetodo = pill.dataset.idMetodo;
+    const visivel = metodoCantosEstaVisivel(idMetodo);
+    pill.classList.toggle("ativa", visivel);
+    const input = pill.querySelector("input");
+    if (input) input.checked = visivel;
+  });
+}
+
+function renderizarSeletorColunasCantos() {
+  const recipiente = document.getElementById("lista-checkboxes-colunas-cantos");
+  if (!recipiente) return;
+  recipiente.innerHTML = "";
+
+  estadoAplicacao.cantosMetodos.forEach((metodo) => {
+    const visivel = metodoCantosEstaVisivel(metodo.id);
+    const label = document.createElement("label");
+    label.className = `pill-coluna-cantos ${visivel ? "ativa" : ""}`;
+    label.dataset.idMetodo = metodo.id;
+    label.title = metodo.descricao;
+
+    const check = document.createElement("input");
+    check.type = "checkbox";
+    check.checked = visivel;
+    check.addEventListener("change", () => {
+      if (check.checked) {
+        estadoAplicacao.cantosColunasOcultas.delete(metodo.id);
+      } else {
+        const totalVisiveis = estadoAplicacao.cantosMetodos.filter((m) =>
+          metodoCantosEstaVisivel(m.id)
+        ).length;
+        if (totalVisiveis <= 1) {
+          check.checked = true;
+          mostrarToast("Mantenha pelo menos 1 coluna visível para comparação.", "aviso");
+          return;
+        }
+        estadoAplicacao.cantosColunasOcultas.add(metodo.id);
+      }
+      salvarPreferenciaColunasCantos();
+      aplicarVisibilidadeColunasCantos();
+    });
+
+    const span = document.createElement("span");
+    span.textContent = metodo.nome;
+
+    label.appendChild(check);
+    label.appendChild(span);
+    recipiente.appendChild(label);
+  });
+}
+
 function renderizarCabecalhoTabelaCantos() {
   const thead = document.getElementById("cabecalho-tabela-cantos");
   if (!thead) return;
@@ -1181,12 +1263,29 @@ function renderizarCabecalhoTabelaCantos() {
   const tr = document.createElement("tr");
   const thImg = document.createElement("th");
   thImg.className = "coluna-fixa-cantos";
-  thImg.textContent = "Imagem";
+  thImg.innerHTML = `
+    <div class="cabecalho-coluna-imagem-cantos">
+      <span>Imagem</span>
+      <div class="acoes-cabecalho-imagem-cantos">
+        <button type="button" id="botao-marcar-todas-imagens-cantos" class="botao-link-colunas" title="Marcar todas as imagens">
+          Todas
+        </button>
+        <span class="separador-links-colunas">•</span>
+        <button type="button" id="botao-restaurar-ordem-imagens-cantos" class="botao-link-colunas" title="Restaurar ordem alfabética original">
+          Ordem A-Z
+        </button>
+      </div>
+    </div>
+  `;
   tr.appendChild(thImg);
 
   estadoAplicacao.cantosMetodos.forEach((metodo) => {
     const th = document.createElement("th");
     th.title = metodo.descricao;
+    th.dataset.colunaMetodo = metodo.id;
+    if (!metodoCantosEstaVisivel(metodo.id)) {
+      th.classList.add("oculto");
+    }
     th.innerHTML = `
       <div class="cabecalho-metodo-tooltip">
         <span>${metodo.nome}</span>
@@ -1197,6 +1296,15 @@ function renderizarCabecalhoTabelaCantos() {
   });
 
   thead.appendChild(tr);
+
+  const btnTodas = document.getElementById("botao-marcar-todas-imagens-cantos");
+  if (btnTodas) {
+    btnTodas.addEventListener("click", marcarTodasImagensCantos);
+  }
+  const btnOrdem = document.getElementById("botao-restaurar-ordem-imagens-cantos");
+  if (btnOrdem) {
+    btnOrdem.addEventListener("click", restaurarOrdemAlfabeticaImagensCantos);
+  }
 }
 
 async function inicializarMetadadosCantos() {
@@ -1212,11 +1320,21 @@ async function inicializarMetadadosCantos() {
     estadoAplicacao.cantosMetodos = dados.metodos || [];
     estadoAplicacao.cantosMetaCarregada = true;
 
+    carregarPreferenciaColunasCantos();
+    // Garante que pelo menos uma coluna esteja visível
+    const algumVisivel = estadoAplicacao.cantosMetodos.some((m) =>
+      metodoCantosEstaVisivel(m.id)
+    );
+    if (!algumVisivel) {
+      estadoAplicacao.cantosColunasOcultas.clear();
+    }
+
     const botaoExecutar = document.getElementById("botao-executar-comparacao-cantos");
     if (botaoExecutar && estadoAplicacao.cantosImagens.length > 0) {
       botaoExecutar.textContent = `▶ Executar Comparação (${estadoAplicacao.cantosImagens.length} imagens)`;
     }
 
+    renderizarSeletorColunasCantos();
     renderizarCabecalhoTabelaCantos();
   } catch (erro) {
     mostrarToast("Falha ao carregar metadados de comparação de cantos.", "erro");
@@ -1240,12 +1358,17 @@ function atualizarResumoEstatisticoCantos() {
   const gradeResumo = document.getElementById("grade-resumo-metodos-cantos");
   if (!painelResumo || !gradeResumo) return;
 
-  const registros = Object.values(estadoAplicacao.cantosResultadosPorArquivo);
-  if (registros.length === 0) {
+  const todosRegistros = Object.values(estadoAplicacao.cantosResultadosPorArquivo);
+  if (todosRegistros.length === 0) {
     painelResumo.classList.add("oculto");
     gradeResumo.innerHTML = "";
     return;
   }
+
+  const registrosAtivos = todosRegistros.filter(
+    (reg) => !estadoAplicacao.cantosImagensDesmarcadas.has(reg.arquivo)
+  );
+  const registros = registrosAtivos.length > 0 ? registrosAtivos : todosRegistros;
 
   painelResumo.classList.remove("oculto");
   gradeResumo.innerHTML = "";
@@ -1272,6 +1395,10 @@ function atualizarResumoEstatisticoCantos() {
 
     const card = document.createElement("div");
     card.className = "card-resumo-metodo-cantos";
+    card.dataset.colunaMetodo = metodo.id;
+    if (!metodoCantosEstaVisivel(metodo.id)) {
+      card.classList.add("oculto");
+    }
     card.title = metodo.descricao;
     card.innerHTML = `
       <h4>${metodo.nome}</h4>
@@ -1291,9 +1418,89 @@ function atualizarResumoEstatisticoCantos() {
   });
 }
 
+function alternarMarcacaoLinhaImagemCantos(tr, nomeArquivo, marcada) {
+  const corpoTabela = document.getElementById("corpo-tabela-cantos");
+  if (!corpoTabela || !tr) return;
+
+  tr.dataset.marcada = marcada ? "true" : "false";
+  tr.classList.toggle("linha-imagem-desmarcada", !marcada);
+
+  if (!marcada) {
+    estadoAplicacao.cantosImagensDesmarcadas.add(nomeArquivo);
+    // Vai para o fundo da tabela
+    corpoTabela.appendChild(tr);
+  } else {
+    estadoAplicacao.cantosImagensDesmarcadas.delete(nomeArquivo);
+    // Sobe ficando logo após a última marcada (isto é, antes da primeira desmarcada)
+    const primeiraDesmarcada = corpoTabela.querySelector('tr[data-marcada="false"]');
+    if (primeiraDesmarcada && primeiraDesmarcada !== tr) {
+      corpoTabela.insertBefore(tr, primeiraDesmarcada);
+    } else if (!primeiraDesmarcada) {
+      corpoTabela.appendChild(tr);
+    }
+  }
+
+  atualizarResumoEstatisticoCantos();
+}
+
+function inserirLinhaTabelaCantosNaPosicao(corpoTabela, linhaTr) {
+  const estaMarcada = linhaTr.dataset.marcada !== "false";
+  if (estaMarcada) {
+    const primeiraDesmarcada = corpoTabela.querySelector('tr[data-marcada="false"]');
+    if (primeiraDesmarcada) {
+      corpoTabela.insertBefore(linhaTr, primeiraDesmarcada);
+      return;
+    }
+  }
+  corpoTabela.appendChild(linhaTr);
+}
+
+function marcarTodasImagensCantos() {
+  const corpoTabela = document.getElementById("corpo-tabela-cantos");
+  if (!corpoTabela) return;
+
+  estadoAplicacao.cantosImagensDesmarcadas.clear();
+  const desmarcadas = Array.from(
+    corpoTabela.querySelectorAll('tr[data-marcada="false"]')
+  );
+  desmarcadas.forEach((tr) => {
+    tr.dataset.marcada = "true";
+    tr.classList.remove("linha-imagem-desmarcada");
+    const chk = tr.querySelector(".check-imagem-cantos");
+    if (chk) chk.checked = true;
+    corpoTabela.appendChild(tr);
+  });
+
+  atualizarResumoEstatisticoCantos();
+}
+
+function restaurarOrdemAlfabeticaImagensCantos() {
+  const corpoTabela = document.getElementById("corpo-tabela-cantos");
+  if (!corpoTabela) return;
+
+  const linhas = Array.from(corpoTabela.querySelectorAll("tr[data-arquivo]"));
+  if (linhas.length === 0) return;
+
+  linhas.sort((a, b) => {
+    const mA = a.dataset.marcada !== "false" ? 0 : 1;
+    const mB = b.dataset.marcada !== "false" ? 0 : 1;
+    if (mA !== mB) return mA - mB;
+    return String(a.dataset.arquivo).localeCompare(String(b.dataset.arquivo));
+  });
+
+  linhas.forEach((tr) => corpoTabela.appendChild(tr));
+}
+
 function criarLinhaTabelaCantos(resultadoImagem) {
   const tr = document.createElement("tr");
   tr.dataset.arquivo = resultadoImagem.arquivo;
+  const estaMarcada = !estadoAplicacao.cantosImagensDesmarcadas.has(
+    resultadoImagem.arquivo
+  );
+  tr.dataset.marcada = estaMarcada ? "true" : "false";
+  if (!estaMarcada) {
+    tr.classList.add("linha-imagem-desmarcada");
+  }
 
   const tdArquivo = document.createElement("td");
   tdArquivo.className = "coluna-fixa-cantos";
@@ -1301,13 +1508,28 @@ function criarLinhaTabelaCantos(resultadoImagem) {
   const textoCache = resultadoImagem.usou_cache ? "Cache" : "RF-DETR";
   tdArquivo.innerHTML = `
     <div class="info-arquivo-cantos">
-      <span class="nome-arquivo-cantos">${resultadoImagem.arquivo}</span>
+      <label class="rotulo-check-imagem-cantos" title="Desmarque para enviar esta imagem para o fim da tabela">
+        <input type="checkbox" class="check-imagem-cantos" ${estaMarcada ? "checked" : ""} />
+        <span class="nome-arquivo-cantos">${resultadoImagem.arquivo}</span>
+      </label>
       <div class="meta-arquivo-cantos">
         <span class="badge-metrica-canto badge-metrica-ok">Conf: ${pctConf}%</span>
         <span class="badge-metrica-canto">${textoCache}</span>
       </div>
     </div>
   `;
+
+  const inputCheck = tdArquivo.querySelector(".check-imagem-cantos");
+  if (inputCheck) {
+    inputCheck.addEventListener("change", () => {
+      alternarMarcacaoLinhaImagemCantos(
+        tr,
+        resultadoImagem.arquivo,
+        inputCheck.checked
+      );
+    });
+  }
+
   tr.appendChild(tdArquivo);
 
   const modoHomografia = estadoAplicacao.cantosModoVisao === "homografia";
@@ -1315,6 +1537,10 @@ function criarLinhaTabelaCantos(resultadoImagem) {
   estadoAplicacao.cantosMetodos.forEach((metodo) => {
     const td = document.createElement("td");
     td.className = "celula-metodo-cantos";
+    td.dataset.colunaMetodo = metodo.id;
+    if (!metodoCantosEstaVisivel(metodo.id)) {
+      td.classList.add("oculto");
+    }
     const dadosMetodo = resultadoImagem.metodos ? resultadoImagem.metodos[metodo.id] : null;
 
     if (!dadosMetodo) {
@@ -1479,7 +1705,7 @@ async function executarComparacaoTodosCantos() {
 
       estadoAplicacao.cantosResultadosPorArquivo[nomeArquivo] = dados;
       const linhaTr = criarLinhaTabelaCantos(dados);
-      corpoTabela.appendChild(linhaTr);
+      inserirLinhaTabelaCantosNaPosicao(corpoTabela, linhaTr);
       atualizarResumoEstatisticoCantos();
     } catch (erro) {
       falhas += 1;
@@ -1560,6 +1786,32 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("botao-modo-visao-homografia")
     .addEventListener("click", () => alternarModoVisaoCantos("homografia"));
+
+  document
+    .getElementById("botao-marcar-todas-colunas-cantos")
+    .addEventListener("click", () => {
+      estadoAplicacao.cantosColunasOcultas.clear();
+      salvarPreferenciaColunasCantos();
+      aplicarVisibilidadeColunasCantos();
+    });
+
+  document
+    .getElementById("botao-apenas-ransac-colunas-cantos")
+    .addEventListener("click", () => {
+      const principais = new Set([
+        "atual_ransac_huber",
+        "ransac_sequencial_contorno",
+        "ransac_peeling_projetivo",
+      ]);
+      estadoAplicacao.cantosColunasOcultas.clear();
+      estadoAplicacao.cantosMetodos.forEach((m) => {
+        if (!principais.has(m.id)) {
+          estadoAplicacao.cantosColunasOcultas.add(m.id);
+        }
+      });
+      salvarPreferenciaColunasCantos();
+      aplicarVisibilidadeColunasCantos();
+    });
 
   document
     .getElementById("botao-fechar-modal-cantos")
