@@ -43,10 +43,19 @@ from src.geometria import (
 )
 from src.pipeline_pontuacao import executar_pipeline_visual_completo
 from src.pontuacao import calcular_pontuacao_reino, construir_matriz
+from ferramentas.rotulador_web.comparador_cantos import (
+    METADADOS_METODOS,
+    executar_comparacao_imagem,
+    listar_imagens_cantos,
+)
 
 PASTA_ESTATICOS = os.path.join(os.path.dirname(__file__), "static")
 PASTA_DADOS = os.path.join(raiz_projeto, "dados")
+PASTA_CANTOS = os.path.join(PASTA_DADOS, "cantos")
 PASTA_INTERMEDIARIAS = os.path.join(PASTA_DADOS, "intermediarias")
+PASTA_CACHE_COMPARADOR_CANTOS = os.path.join(
+    PASTA_INTERMEDIARIAS, "cache_comparador_cantos_web"
+)
 PASTA_GRADES = os.path.join(PASTA_INTERMEDIARIAS, "03_grade_cortes")
 PASTA_HOMOGRAFIAS = os.path.join(PASTA_INTERMEDIARIAS, "02_homografia")
 PASTA_CELULAS = os.path.join(PASTA_DADOS, "celulas_recortadas")
@@ -1162,3 +1171,70 @@ def exportar_diagnostico_etapa4(dados=Body(...)):
             "Content-Disposition": 'attachment; filename="diagnostico_etapa4_python.json"'
         },
     )
+
+
+@app.get("/api/comparar-cantos/imagens")
+def obter_imagens_e_metodos_cantos():
+    imagens = listar_imagens_cantos(PASTA_CANTOS)
+    return {
+        "imagens": imagens,
+        "total": len(imagens),
+        "metodos": METADADOS_METODOS,
+    }
+
+
+@app.post("/api/comparar-cantos/executar")
+def executar_comparador_cantos(dados=Body(default={})):
+    if not isinstance(dados, dict):
+        dados = {}
+
+    arquivo = str(dados.get("arquivo", "")).strip()
+    forcar_deteccao = bool(dados.get("forcar_deteccao", False))
+
+    imagens_disponiveis = listar_imagens_cantos(PASTA_CANTOS)
+    if not imagens_disponiveis:
+        raise HTTPException(
+            status_code=404,
+            detail="Nenhuma imagem encontrada na pasta dados/cantos/.",
+        )
+
+    if arquivo:
+        nome_seguro = os.path.basename(arquivo)
+        if nome_seguro not in imagens_disponiveis:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Imagem '{nome_seguro}' não encontrada em dados/cantos/.",
+            )
+        caminho_img = os.path.join(PASTA_CANTOS, nome_seguro)
+        try:
+            resultado = executar_comparacao_imagem(
+                caminho_imagem=caminho_img,
+                pasta_cache=PASTA_CACHE_COMPARADOR_CANTOS,
+                forcar_deteccao=forcar_deteccao,
+            )
+            return resultado
+        except Exception as erro:
+            raise HTTPException(status_code=422, detail=str(erro))
+
+    resultados_lote = []
+    for nome_arq in imagens_disponiveis:
+        caminho_img = os.path.join(PASTA_CANTOS, nome_arq)
+        try:
+            res = executar_comparacao_imagem(
+                caminho_imagem=caminho_img,
+                pasta_cache=PASTA_CACHE_COMPARADOR_CANTOS,
+                forcar_deteccao=forcar_deteccao,
+            )
+            resultados_lote.append(res)
+        except Exception as erro:
+            resultados_lote.append({
+                "arquivo": nome_arq,
+                "erro": str(erro),
+                "metodos": {},
+            })
+
+    return {
+        "resultados": resultados_lote,
+        "total": len(resultados_lote),
+    }
+

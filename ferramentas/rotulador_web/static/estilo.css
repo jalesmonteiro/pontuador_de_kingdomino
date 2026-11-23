@@ -1104,3 +1104,293 @@ body {
     max-height: 55vh;
   }
 }
+
+/* ==================== ABA 4: COMPARAR CANTOS ==================== */
+.painel-resumo-cantos {
+  padding: 12px 14px;
+}
+
+.grade-resumo-metodos-cantos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+  gap: 10px;
+}
+
+.card-resumo-metodo-cantos {
+  background-color: #0f172a;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-resumo-metodo-cantos h4 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+  line-height: 1.25;
+}
+
+.metricas-resumo-metodo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.76rem;
+}
+
+.recipiente-tabela-cantos {
+  padding: 0;
+  overflow: hidden;
+}
+
+.envoltorio-rolagem-tabela-cantos {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 230px);
+  scroll-behavior: smooth;
+}
+
+.tabela-comparacao-cantos {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1280px;
+}
+
+.tabela-comparacao-cantos th,
+.tabela-comparacao-cantos td {
+  border-bottom: 1px solid var(--cor-borda);
+  border-right: 1px solid var(--cor-borda);
+  padding: 10px;
+  vertical-align: top;
+}
+
+.tabela-comparacao-cantos thead th {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background-color: #162032;
+  color: var(--cor-texto);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 1px 0 var(--cor-borda);
+}
+
+.tabela-comparacao-cantos th.coluna-fixa-cantos,
+.tabela-comparacao-cantos td.coluna-fixa-cantos {
+  position: sticky;
+  left: 0;
+  z-index: 12;
+  background-color: #131c2e;
+  min-width: 175px;
+  max-width: 200px;
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.35);
+}
+
+.tabela-comparacao-cantos thead th.coluna-fixa-cantos {
+  z-index: 20;
+  background-color: #162032;
+  text-align: left;
+}
+
+.cabecalho-metodo-tooltip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: help;
+}
+
+.dica-metodo-sub {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--cor-texto-suave);
+}
+
+.info-arquivo-cantos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nome-arquivo-cantos {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+  word-break: break-all;
+}
+
+.meta-arquivo-cantos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.celula-metodo-cantos {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  min-width: 195px;
+}
+
+.celula-metodo-cantos:hover {
+  background-color: rgba(59, 130, 246, 0.12);
+}
+
+.conteudo-celula-cantos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+
+.miniatura-comparacao-cantos {
+  width: 185px;
+  height: 155px;
+  object-fit: contain;
+  background-color: #090e1a;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+
+.celula-metodo-cantos:hover .miniatura-comparacao-cantos {
+  transform: scale(1.02);
+  border-color: #60a5fa;
+}
+
+.badges-metricas-cantos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.badge-metrica-canto {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background-color: #0f172a;
+  border: 1px solid var(--cor-borda);
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+.badge-metrica-ok {
+  background-color: rgba(22, 163, 74, 0.18);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+.badge-metrica-alerta {
+  background-color: rgba(217, 119, 6, 0.22);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+.badge-metrica-perigo {
+  background-color: rgba(220, 38, 38, 0.22);
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.badge-metrica-destaque {
+  background-color: rgba(37, 99, 235, 0.22);
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+.celula-vazia-cantos {
+  padding: 36px !important;
+  text-align: center;
+}
+
+/* Modal ampliado de Comparação de Cantos */
+.caixa-modal-cantos {
+  max-width: 980px;
+  width: 95%;
+}
+
+.barra-metricas-modal-cantos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background-color: #0f172a;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.grupo-badges-modal-cantos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lista-vertices-modal-cantos {
+  font-family: Consolas, monospace;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.item-vertice-modal {
+  background-color: #1e293b;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.grade-imagens-modal-cantos {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 14px;
+}
+
+.bloco-imagem-modal-cantos {
+  background-color: #0f172a;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bloco-imagem-modal-cantos h4 {
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+  text-align: center;
+}
+
+.area-imagem-modal-cantos {
+  background-color: #090e1a;
+  border-radius: 8px;
+  min-height: 340px;
+  max-height: 62vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.area-imagem-modal-cantos img {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+@media (max-width: 820px) {
+  .grade-imagens-modal-cantos {
+    grid-template-columns: 1fr;
+  }
+}

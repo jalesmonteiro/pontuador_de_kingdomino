@@ -11,6 +11,12 @@ const estadoAplicacao = {
   inspecaoCarregada: false,
   ultimaImagemAvaliadaB64: null,
   etapasAvaliacaoAtual: [],
+  cantosMetodos: [],
+  cantosImagens: [],
+  cantosResultadosPorArquivo: {},
+  cantosModoVisao: "cantos",
+  cantosEmExecucao: false,
+  cantosMetaCarregada: false,
 };
 
 const CODIGOS_COM_COROA = new Set(["f", "d", "o", "g", "p", "m"]);
@@ -96,6 +102,9 @@ function alternarAbaPrincipal(nomeAba) {
   document
     .getElementById("visao-avaliar")
     .classList.toggle("oculto", nomeAba !== "avaliar");
+  document
+    .getElementById("visao-cantos")
+    .classList.toggle("oculto", nomeAba !== "cantos");
 
   document
     .getElementById("botao-aba-rotulagem")
@@ -106,9 +115,15 @@ function alternarAbaPrincipal(nomeAba) {
   document
     .getElementById("botao-aba-avaliar")
     .classList.toggle("ativo", nomeAba === "avaliar");
+  document
+    .getElementById("botao-aba-cantos")
+    .classList.toggle("ativo", nomeAba === "cantos");
 
   if (nomeAba === "ajustes" && !estadoAplicacao.inspecaoCarregada) {
     carregarInspecaoClasses();
+  }
+  if (nomeAba === "cantos" && !estadoAplicacao.cantosMetaCarregada) {
+    inicializarMetadadosCantos();
   }
 }
 
@@ -1156,6 +1171,341 @@ async function baixarDiagnosticoEtapa(endpoint, nomeArquivo, idBotao) {
   }
 }
 
+/* ==================== ABA 4: COMPARAR CANTOS ==================== */
+
+function renderizarCabecalhoTabelaCantos() {
+  const thead = document.getElementById("cabecalho-tabela-cantos");
+  if (!thead) return;
+  thead.innerHTML = "";
+
+  const tr = document.createElement("tr");
+  const thImg = document.createElement("th");
+  thImg.className = "coluna-fixa-cantos";
+  thImg.textContent = "Imagem";
+  tr.appendChild(thImg);
+
+  estadoAplicacao.cantosMetodos.forEach((metodo) => {
+    const th = document.createElement("th");
+    th.title = metodo.descricao;
+    th.innerHTML = `
+      <div class="cabecalho-metodo-tooltip">
+        <span>${metodo.nome}</span>
+        <span class="dica-metodo-sub">Passe o mouse p/ descrição</span>
+      </div>
+    `;
+    tr.appendChild(th);
+  });
+
+  thead.appendChild(tr);
+}
+
+async function inicializarMetadadosCantos() {
+  try {
+    const resposta = await fetch("/api/comparar-cantos/imagens");
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+      mostrarToast(dados.detail || "Erro ao listar imagens de cantos.", "erro");
+      return;
+    }
+
+    estadoAplicacao.cantosImagens = dados.imagens || [];
+    estadoAplicacao.cantosMetodos = dados.metodos || [];
+    estadoAplicacao.cantosMetaCarregada = true;
+
+    const botaoExecutar = document.getElementById("botao-executar-comparacao-cantos");
+    if (botaoExecutar && estadoAplicacao.cantosImagens.length > 0) {
+      botaoExecutar.textContent = `▶ Executar Comparação (${estadoAplicacao.cantosImagens.length} imagens)`;
+    }
+
+    renderizarCabecalhoTabelaCantos();
+  } catch (erro) {
+    mostrarToast("Falha ao carregar metadados de comparação de cantos.", "erro");
+  }
+}
+
+function classificarBadgeCobertura(coberturaPct) {
+  if (coberturaPct >= 96.5) return "badge-metrica-ok";
+  if (coberturaPct >= 94.5) return "badge-metrica-alerta";
+  return "badge-metrica-perigo";
+}
+
+function classificarBadgeRazaoArea(razao) {
+  if (razao >= 1.03 && razao <= 1.25) return "badge-metrica-ok";
+  if (razao >= 0.96 && razao < 1.03) return "badge-metrica-alerta";
+  return "badge-metrica-perigo";
+}
+
+function atualizarResumoEstatisticoCantos() {
+  const painelResumo = document.getElementById("painel-resumo-estatistico-cantos");
+  const gradeResumo = document.getElementById("grade-resumo-metodos-cantos");
+  if (!painelResumo || !gradeResumo) return;
+
+  const registros = Object.values(estadoAplicacao.cantosResultadosPorArquivo);
+  if (registros.length === 0) {
+    painelResumo.classList.add("oculto");
+    gradeResumo.innerHTML = "";
+    return;
+  }
+
+  painelResumo.classList.remove("oculto");
+  gradeResumo.innerHTML = "";
+
+  estadoAplicacao.cantosMetodos.forEach((metodo) => {
+    let somaCob = 0;
+    let somaRazao = 0;
+    let somaTempo = 0;
+    let cont = 0;
+
+    registros.forEach((reg) => {
+      const m = reg.metodos && reg.metodos[metodo.id];
+      if (m) {
+        somaCob += Number(m.cobertura_mascara_pct || 0);
+        somaRazao += Number(m.razao_area || 0);
+        somaTempo += Number(m.tempo_ms || 0);
+        cont += 1;
+      }
+    });
+
+    const mediaCob = cont > 0 ? (somaCob / cont).toFixed(1) : "0.0";
+    const mediaRazao = cont > 0 ? (somaRazao / cont).toFixed(2) : "0.00";
+    const mediaTempo = cont > 0 ? (somaTempo / cont).toFixed(1) : "0.0";
+
+    const card = document.createElement("div");
+    card.className = "card-resumo-metodo-cantos";
+    card.title = metodo.descricao;
+    card.innerHTML = `
+      <h4>${metodo.nome}</h4>
+      <div class="metricas-resumo-metodo">
+        <span class="badge-metrica-canto ${classificarBadgeCobertura(Number(mediaCob))}">
+          Cob. Média: ${mediaCob}%
+        </span>
+        <span class="badge-metrica-canto ${classificarBadgeRazaoArea(Number(mediaRazao))}">
+          Razão Área: ${mediaRazao}
+        </span>
+        <span class="badge-metrica-canto">
+          Tempo: ${mediaTempo} ms
+        </span>
+      </div>
+    `;
+    gradeResumo.appendChild(card);
+  });
+}
+
+function criarLinhaTabelaCantos(resultadoImagem) {
+  const tr = document.createElement("tr");
+  tr.dataset.arquivo = resultadoImagem.arquivo;
+
+  const tdArquivo = document.createElement("td");
+  tdArquivo.className = "coluna-fixa-cantos";
+  const pctConf = ((resultadoImagem.confianca_rfdetr || 0) * 100).toFixed(1);
+  const textoCache = resultadoImagem.usou_cache ? "Cache" : "RF-DETR";
+  tdArquivo.innerHTML = `
+    <div class="info-arquivo-cantos">
+      <span class="nome-arquivo-cantos">${resultadoImagem.arquivo}</span>
+      <div class="meta-arquivo-cantos">
+        <span class="badge-metrica-canto badge-metrica-ok">Conf: ${pctConf}%</span>
+        <span class="badge-metrica-canto">${textoCache}</span>
+      </div>
+    </div>
+  `;
+  tr.appendChild(tdArquivo);
+
+  const modoHomografia = estadoAplicacao.cantosModoVisao === "homografia";
+
+  estadoAplicacao.cantosMetodos.forEach((metodo) => {
+    const td = document.createElement("td");
+    td.className = "celula-metodo-cantos";
+    const dadosMetodo = resultadoImagem.metodos ? resultadoImagem.metodos[metodo.id] : null;
+
+    if (!dadosMetodo) {
+      td.innerHTML = `<span class="subtitulo">Indisponível</span>`;
+      tr.appendChild(td);
+      return;
+    }
+
+    const srcInicial = modoHomografia
+      ? dadosMetodo.img_homografia_b64
+      : dadosMetodo.img_cantos_b64;
+
+    const cob = Number(dadosMetodo.cobertura_mascara_pct || 0).toFixed(1);
+    const razao = Number(dadosMetodo.razao_area || 0).toFixed(2);
+    const tempo = Number(dadosMetodo.tempo_ms || 0).toFixed(1);
+
+    td.innerHTML = `
+      <div class="conteudo-celula-cantos">
+        <img
+          class="miniatura-comparacao-cantos"
+          src="${srcInicial}"
+          alt="${resultadoImagem.arquivo} - ${metodo.nome}"
+          data-arquivo="${resultadoImagem.arquivo}"
+          data-metodo="${metodo.id}"
+        />
+        <div class="badges-metricas-cantos">
+          <span class="badge-metrica-canto ${classificarBadgeCobertura(Number(cob))}" title="Percentual da máscara contido no quadrilátero">
+            Cob: ${cob}%
+          </span>
+          <span class="badge-metrica-canto ${classificarBadgeRazaoArea(Number(razao))}" title="Razão entre área do quadrilátero e área da máscara">
+            Razão: ${razao}
+          </span>
+          <span class="badge-metrica-canto" title="Tempo de execução da extração de cantos">
+            ${tempo} ms
+          </span>
+        </div>
+      </div>
+    `;
+
+    td.addEventListener("click", () =>
+      abrirModalDetalheCantos(resultadoImagem.arquivo, metodo.id)
+    );
+    tr.appendChild(td);
+  });
+
+  return tr;
+}
+
+function alternarModoVisaoCantos(novoModo) {
+  estadoAplicacao.cantosModoVisao = novoModo;
+  const ehHomografia = novoModo === "homografia";
+
+  document
+    .getElementById("botao-modo-visao-cantos")
+    .classList.toggle("ativo", !ehHomografia);
+  document
+    .getElementById("botao-modo-visao-homografia")
+    .classList.toggle("ativo", ehHomografia);
+
+  document.querySelectorAll(".miniatura-comparacao-cantos").forEach((imgEl) => {
+    const arq = imgEl.dataset.arquivo;
+    const idMetodo = imgEl.dataset.metodo;
+    const reg = estadoAplicacao.cantosResultadosPorArquivo[arq];
+    if (reg && reg.metodos && reg.metodos[idMetodo]) {
+      imgEl.src = ehHomografia
+        ? reg.metodos[idMetodo].img_homografia_b64
+        : reg.metodos[idMetodo].img_cantos_b64;
+    }
+  });
+}
+
+function abrirModalDetalheCantos(nomeArquivo, idMetodo) {
+  const reg = estadoAplicacao.cantosResultadosPorArquivo[nomeArquivo];
+  const metaMetodo = estadoAplicacao.cantosMetodos.find((m) => m.id === idMetodo);
+  if (!reg || !reg.metodos || !reg.metodos[idMetodo] || !metaMetodo) return;
+
+  const dadosM = reg.metodos[idMetodo];
+  document.getElementById("modal-cantos-titulo").textContent =
+    `${nomeArquivo} — ${metaMetodo.nome}`;
+  document.getElementById("modal-cantos-subtitulo").textContent = metaMetodo.descricao;
+
+  const cob = Number(dadosM.cobertura_mascara_pct || 0).toFixed(2);
+  const razao = Number(dadosM.razao_area || 0).toFixed(3);
+  const tempo = Number(dadosM.tempo_ms || 0).toFixed(2);
+  const pctConf = ((reg.confianca_rfdetr || 0) * 100).toFixed(1);
+
+  document.getElementById("modal-cantos-badges-metricas").innerHTML = `
+    <span class="badge-metrica-canto badge-metrica-ok">Confiança RF-DETR: ${pctConf}%</span>
+    <span class="badge-metrica-canto ${classificarBadgeCobertura(Number(cob))}">Cobertura Máscara: ${cob}%</span>
+    <span class="badge-metrica-canto ${classificarBadgeRazaoArea(Number(razao))}">Razão de Área: ${razao}</span>
+    <span class="badge-metrica-canto">Tempo: ${tempo} ms</span>
+  `;
+
+  const nomesCantos = ["0: Sup-Esq", "1: Sup-Dir", "2: Inf-Dir", "3: Inf-Esq"];
+  const listaVerticesEl = document.getElementById("modal-cantos-lista-vertices");
+  listaVerticesEl.innerHTML = "";
+  (dadosM.vertices || []).forEach((pt, idx) => {
+    const span = document.createElement("span");
+    span.className = "item-vertice-modal";
+    span.textContent = `${nomesCantos[idx] || idx}: (${pt[0]}, ${pt[1]})`;
+    listaVerticesEl.appendChild(span);
+  });
+
+  document.getElementById("modal-cantos-img-original").src = dadosM.img_cantos_b64;
+  document.getElementById("modal-cantos-img-homografia").src = dadosM.img_homografia_b64;
+  document.getElementById("modal-detalhe-cantos").classList.remove("oculto");
+}
+
+function fecharModalDetalheCantos() {
+  document.getElementById("modal-detalhe-cantos").classList.add("oculto");
+}
+
+async function executarComparacaoTodosCantos() {
+  if (estadoAplicacao.cantosEmExecucao) return;
+
+  if (!estadoAplicacao.cantosMetaCarregada) {
+    await inicializarMetadadosCantos();
+  }
+
+  const imagens = estadoAplicacao.cantosImagens || [];
+  if (imagens.length === 0) {
+    mostrarToast("Nenhuma imagem encontrada em dados/cantos/.", "aviso");
+    return;
+  }
+
+  const botaoExecutar = document.getElementById("botao-executar-comparacao-cantos");
+  const statusEl = document.getElementById("status-progresso-cantos");
+  const corpoTabela = document.getElementById("corpo-tabela-cantos");
+  const forcarDeteccao = document.getElementById("check-forcar-deteccao-cantos").checked;
+
+  estadoAplicacao.cantosEmExecucao = true;
+  estadoAplicacao.cantosResultadosPorArquivo = {};
+  botaoExecutar.disabled = true;
+  corpoTabela.innerHTML = "";
+  atualizarResumoEstatisticoCantos();
+
+  let falhas = 0;
+
+  for (let i = 0; i < imagens.length; i += 1) {
+    const nomeArquivo = imagens[i];
+    statusEl.textContent = `Processando ${i + 1} / ${imagens.length} (${nomeArquivo})...`;
+
+    try {
+      const resposta = await fetch("/api/comparar-cantos/executar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          arquivo: nomeArquivo,
+          forcar_deteccao: forcarDeteccao,
+        }),
+      });
+
+      const dados = await resposta.json();
+      if (!resposta.ok) {
+        falhas += 1;
+        mostrarToast(
+          `Erro em ${nomeArquivo}: ${dados.detail || "falha ao processar"}`,
+          "erro"
+        );
+        continue;
+      }
+
+      estadoAplicacao.cantosResultadosPorArquivo[nomeArquivo] = dados;
+      const linhaTr = criarLinhaTabelaCantos(dados);
+      corpoTabela.appendChild(linhaTr);
+      atualizarResumoEstatisticoCantos();
+    } catch (erro) {
+      falhas += 1;
+      mostrarToast(`Falha de rede ao processar ${nomeArquivo}.`, "erro");
+    }
+  }
+
+  estadoAplicacao.cantosEmExecucao = false;
+  botaoExecutar.disabled = false;
+
+  const concluidas = Object.keys(estadoAplicacao.cantosResultadosPorArquivo).length;
+  statusEl.textContent = `Concluído: ${concluidas} / ${imagens.length} imagens comparadas`;
+
+  if (falhas === 0) {
+    mostrarToast(
+      `Comparação concluída com sucesso nas ${concluidas} imagens!`,
+      "sucesso"
+    );
+  } else {
+    mostrarToast(
+      `Comparação finalizada com ${concluidas} sucessos e ${falhas} falha(s).`,
+      "aviso"
+    );
+  }
+}
+
 async function carregarTabuleiros() {
   try {
     const resposta = await fetch("/api/tabuleiros");
@@ -1194,6 +1544,34 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("botao-aba-avaliar")
     .addEventListener("click", () => alternarAbaPrincipal("avaliar"));
+
+  document
+    .getElementById("botao-aba-cantos")
+    .addEventListener("click", () => alternarAbaPrincipal("cantos"));
+
+  document
+    .getElementById("botao-executar-comparacao-cantos")
+    .addEventListener("click", executarComparacaoTodosCantos);
+
+  document
+    .getElementById("botao-modo-visao-cantos")
+    .addEventListener("click", () => alternarModoVisaoCantos("cantos"));
+
+  document
+    .getElementById("botao-modo-visao-homografia")
+    .addEventListener("click", () => alternarModoVisaoCantos("homografia"));
+
+  document
+    .getElementById("botao-fechar-modal-cantos")
+    .addEventListener("click", fecharModalDetalheCantos);
+
+  document
+    .getElementById("modal-detalhe-cantos")
+    .addEventListener("click", (evento) => {
+      if (evento.target.id === "modal-detalhe-cantos") {
+        fecharModalDetalheCantos();
+      }
+    });
 
   document
     .getElementById("entrada-arquivo-avaliar")
