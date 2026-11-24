@@ -1,5 +1,6 @@
 # Segmentação de tabuleiros (RF-DETR), homografia, cálculo de grade dinâmica e fatiamento
 
+import itertools
 import os
 import cv2
 import numpy as np
@@ -225,11 +226,11 @@ def _diferenca_angular_graus(vetor1, vetor2):
     return float(np.degrees(np.arccos(cosseno)))
 
 
-def extrair_vertices_contorno(contorno):
+def extrair_vertices_contorno_quad_base_huber(contorno):
     """
-    Extrai os 4 vértices ordenados do tabuleiro ajustando cada borda do contorno real
-    via RANSAC, com trava de consistência projetiva (desvio máximo de 15 graus em relação
-    ao lado correspondente no quadrilátero base, substituindo por cv2.DIST_HUBER quando necessário).
+    Baseline legado: extrai os 4 vértices ordenados do tabuleiro ajustando cada borda
+    do contorno real via RANSAC guiado pelo quadrilátero base, com trava de 15 graus
+    e fallback para cv2.DIST_HUBER.
     """
     quad_base = simplificar_para_quadrilatero(contorno)
     grupos = _agrupar_pontos_contorno_por_lado(contorno, quad_base)
@@ -264,6 +265,512 @@ def extrair_vertices_contorno(contorno):
         return quad_base
 
     return ordenar_vertices(cantos)
+
+
+def _diferenca_angular_orientada_rad(ang1, ang2):
+    dif = abs(ang1 - ang2) % (2.0 * np.pi)
+    return min(dif, 2.0 * np.pi - dif)
+
+
+def _centroide_contorno(contorno):
+    momentos = cv2.moments(contorno)
+    if momentos["m00"] > 1e-5:
+        return np.array(
+            [momentos["m10"] / momentos["m00"], momentos["m01"] / momentos["m00"]],
+            dtype=np.float32,
+        )
+    pts = contorno.reshape(-1, 2).astype(np.float32)
+    return np.mean(pts, axis=0)
+
+
+def _validar_quadrilatero_razoavel(vertices, contorno):
+    if vertices is None or len(vertices) != 4:
+        return False
+    pts = np.asarray(vertices, dtype=np.float32)
+    if not np.all(np.isfinite(pts)):
+        return False
+
+    area_quad = float(cv2.contourArea(pts.reshape(-1, 1, 2)))
+    area_cont = max(1.0, float(cv2.contourArea(contorno)))
+    if area_quad < 0.25 * area_cont or area_quad > 2.5 * area_cont:
+        return False
+
+    if not cv2.isContourConvex(pts.reshape(-1, 1, 2).astype(np.float32)):
+        return False
+
+    for i in range(4):
+        p_ant = pts[(i - 1) % 4]
+        p_atual = pts[i]
+        p_prox = pts[(i + 1) % 4]
+        v1 = p_ant - p_atual
+        v2 = p_prox - p_atual
+        n1 = float(np.linalg.norm(v1))
+        n2 = float(np.linalg.norm(v2))
+        if n1 < 8.0 or n2 < 8.0:
+            return False
+        cos_ang = float(np.clip(np.dot(v1, v2) / (n1 * n2), -1.0, 1.0))
+        ang_interno = float(np.degrees(np.arccos(cos_ang)))
+        if ang_interno < 25.0 or ang_interno > 160.0:
+            return False
+
+    return True
+
+
+def _ordenar_retas_ao_redor_do_centro(retas, centro):
+    retas_com_angulo = []
+    for reta in retas:
+        vx, vy, x0, y0 = [float(v) for v in np.asarray(reta).flatten()[:4]]
+        normal = np.array([-vy, vx], dtype=np.float32)
+        norma_n = float(np.linalg.norm(normal))
+        if norma_n < 1e-6:
+            return None
+        normal = normal / norma_n
+        vetor_centro = np.array([x0 - centro[0], y0 - centro[1]], dtype=np.float32)
+        proj = float(np.dot(vetor_centro, normal))
+        if proj < 0:
+            normal = -normal
+        angulo = float(np.arctan2(normal[1], normal[0]))
+        retas_com_angulo.append((angulo, reta))
+
+    retas_com_angulo.sort(key=lambda item: item[0])
+
+    for i in range(4):
+        a1 = retas_com_angulo[i][0]
+        a2 = retas_com_angulo[(i + 1) % 4][0]
+        if np.degrees(_diferenca_angular_orientada_rad(a1, a2)) < 25.0:
+            return None
+
+    retas_ordenadas = [item[1] for item in retas_com_angulo]
+    cantos = []
+    for i in range(4):
+        inter = _intersecao_retas(retas_ordenadas[i], retas_ordenadas[(i + 1) % 4])
+        if inter is None or not np.all(np.isfinite(inter)):
+            return None
+        cantos.append(inter)
+
+    return ordenar_vertices(cantos)
+
+
+def _ransac_sequencial_contorno(contorno):
+    pts_contorno = contorno.reshape(-1, 2).astype(np.float32)
+    num_pts = len(pts_contorno)
+    if num_pts < 4:
+        return simplificar_para_quadrilatero(contorno)
+
+    pontos_densos = []
+    for i in range(num_pts):
+        p1 = pts_contorno[i]
+        p2 = pts_contorno[(i + 1) % num_pts]
+        dist = float(np.linalg.norm(p2 - p1))
+        passos = max(2, int(dist / 2.0))
+        for alfa in np.linspace(0.0, 1.0, passos, endpoint=False):
+            pontos_densos.append(p1 * (1.0 - alfa) + p2 * alfa)
+
+    if len(pontos_densos) < 40:
+        return simplificar_para_quadrilatero(contorno)
+
+    centro = _centroide_contorno(contorno)
+    perimetro = float(cv2.arcLength(contorno, True))
+    limiar_inlier = max(3.0, min(8.0, perimetro * 0.004))
+    limiar_remocao = limiar_inlier * 1.65
+
+    restantes = np.array(pontos_densos, dtype=np.float32)
+    rng = np.random.default_rng(42)
+    retas_extraidas = []
+    angulos_normais = []
+
+    for _ in range(4):
+        n_rest = len(restantes)
+        if n_rest < 12:
+            break
+
+        melhor_inliers = None
+        melhor_pontuacao = -1.0
+
+        for _ in range(220):
+            idx = rng.choice(n_rest, size=2, replace=False)
+            p1 = restantes[idx[0]]
+            p2 = restantes[idx[1]]
+            vetor = p2 - p1
+            norma = float(np.linalg.norm(vetor))
+            if norma < 10.0:
+                continue
+            direcao = vetor / norma
+            normal = np.array([-direcao[1], direcao[0]], dtype=np.float32)
+            meio = 0.5 * (p1 + p2)
+            if float(np.dot(meio - centro, normal)) < 0:
+                normal = -normal
+            ang_n = float(np.arctan2(normal[1], normal[0]))
+
+            muito_proximo = False
+            for ang_existente in angulos_normais:
+                if np.degrees(_diferenca_angular_orientada_rad(ang_n, ang_existente)) < 45.0:
+                    muito_proximo = True
+                    break
+            if muito_proximo:
+                continue
+
+            distancias = np.abs(np.dot(restantes - p1, normal))
+            mascara_in = distancias <= limiar_inlier
+            qtd_in = int(np.sum(mascara_in))
+            if qtd_in < 10:
+                continue
+
+            pontuacao = float(qtd_in)
+            if angulos_normais:
+                ang_ref = angulos_normais[0]
+                dif_ref = np.degrees(_diferenca_angular_orientada_rad(ang_n, ang_ref))
+                desvio_ideal = min(abs(dif_ref - 90.0), abs(dif_ref - 180.0))
+                if desvio_ideal < 25.0:
+                    pontuacao *= 1.15
+
+            if pontuacao > melhor_pontuacao:
+                melhor_pontuacao = pontuacao
+                melhor_inliers = mascara_in
+
+        if melhor_inliers is None:
+            break
+
+        pts_inliers = restantes[melhor_inliers]
+        reta = cv2.fitLine(pts_inliers, cv2.DIST_HUBER, 0, 0.01, 0.01)
+        vx, vy, x0, y0 = [float(v) for v in reta.flatten()[:4]]
+        normal_ref = np.array([-vy, vx], dtype=np.float32)
+        if float(np.dot(np.array([x0, y0], dtype=np.float32) - centro, normal_ref)) < 0:
+            normal_ref = -normal_ref
+        ang_ref = float(np.arctan2(normal_ref[1], normal_ref[0]))
+
+        retas_extraidas.append(reta)
+        angulos_normais.append(ang_ref)
+
+        dist_ref = np.abs(
+            np.dot(restantes - np.array([x0, y0], dtype=np.float32), normal_ref)
+        )
+        restantes = restantes[dist_ref > limiar_remocao]
+
+    if len(retas_extraidas) < 4:
+        return simplificar_para_quadrilatero(contorno)
+
+    vertices = _ordenar_retas_ao_redor_do_centro(retas_extraidas, centro)
+    if not _validar_quadrilatero_razoavel(vertices, contorno):
+        return simplificar_para_quadrilatero(contorno)
+
+    return vertices
+
+
+def ransac_peeling_projetivo(contorno, mascara=None):
+    """
+    Extrai os 4 cantos do tabuleiro via RANSAC Peeling Projetivo (Top-K + Quarteto):
+    amostra pontos densos do contorno real, extrai até 8 retas candidatas via RANSAC
+    sequencial (semente fixa 42) refinadas com DIST_HUBER e seleciona o quarteto que
+    maximiza 0.50*IoU + 0.35*inliers + 0.15*consistencia_angular respeitando restrições
+    projetivas (opostos <= 42 graus, ângulos internos [48, 132] graus, cobertura >= 95%).
+    """
+    pts_contorno = contorno.reshape(-1, 2).astype(np.float32)
+    num_pts = len(pts_contorno)
+    if num_pts < 4:
+        return _ransac_sequencial_contorno(contorno)
+
+    pontos_densos = []
+    for i in range(num_pts):
+        p1 = pts_contorno[i]
+        p2 = pts_contorno[(i + 1) % num_pts]
+        dist = float(np.linalg.norm(p2 - p1))
+        passos = max(2, int(dist / 2.0))
+        for alfa in np.linspace(0.0, 1.0, passos, endpoint=False):
+            pontos_densos.append(p1 * (1.0 - alfa) + p2 * alfa)
+
+    total_pontos = len(pontos_densos)
+    if total_pontos < 40:
+        return _ransac_sequencial_contorno(contorno)
+
+    centro = _centroide_contorno(contorno)
+    perimetro = float(cv2.arcLength(contorno, True))
+    limiar_inlier = max(3.0, min(8.0, perimetro * 0.004))
+    limiar_remocao = limiar_inlier * 1.65
+    minimo_restantes = max(12, int(0.05 * total_pontos))
+
+    def extrair_retas_peeling(qtd_alvo, exigir_separacao_angular):
+        restantes_loc = np.array(pontos_densos, dtype=np.float32)
+        rng_loc = np.random.default_rng(42)
+        lista_retas = []
+        angulos_vistos = []
+
+        for _ in range(qtd_alvo):
+            n_rest = len(restantes_loc)
+            if n_rest < minimo_restantes:
+                break
+
+            melhor_inliers = None
+            melhor_pontuacao_r = -1.0
+            max_inliers = -1
+
+            for _ in range(220):
+                idx = rng_loc.choice(n_rest, size=2, replace=False)
+                p1 = restantes_loc[idx[0]]
+                p2 = restantes_loc[idx[1]]
+                vetor = p2 - p1
+                norma = float(np.linalg.norm(vetor))
+                if norma < 10.0:
+                    continue
+                direcao = vetor / norma
+                normal = np.array([-direcao[1], direcao[0]], dtype=np.float32)
+                meio = 0.5 * (p1 + p2)
+                if float(np.dot(meio - centro, normal)) < 0:
+                    normal = -normal
+                ang_n = float(np.arctan2(normal[1], normal[0]))
+
+                if exigir_separacao_angular:
+                    muito_proximo = False
+                    for ang_existente in angulos_vistos:
+                        if np.degrees(_diferenca_angular_orientada_rad(ang_n, ang_existente)) < 45.0:
+                            muito_proximo = True
+                            break
+                    if muito_proximo:
+                        continue
+
+                distancias = np.abs(np.dot(restantes_loc - p1, normal))
+                mascara_in = distancias <= limiar_inlier
+                qtd_in = int(np.sum(mascara_in))
+                if qtd_in < 10:
+                    continue
+
+                pontuacao_r = float(qtd_in)
+                if exigir_separacao_angular and angulos_vistos:
+                    ang_ref = angulos_vistos[0]
+                    dif_ref = np.degrees(_diferenca_angular_orientada_rad(ang_n, ang_ref))
+                    desvio_ideal = min(abs(dif_ref - 90.0), abs(dif_ref - 180.0))
+                    if desvio_ideal < 25.0:
+                        pontuacao_r *= 1.15
+
+                if pontuacao_r > melhor_pontuacao_r:
+                    melhor_pontuacao_r = pontuacao_r
+                    melhor_inliers = mascara_in
+                    max_inliers = qtd_in
+
+            if melhor_inliers is None or max_inliers < 10:
+                break
+
+            pts_inliers = restantes_loc[melhor_inliers]
+            reta = cv2.fitLine(pts_inliers, cv2.DIST_HUBER, 0, 0.01, 0.01)
+            vx, vy, x0, y0 = [float(v) for v in reta.flatten()[:4]]
+            dir_unit = np.array([vx, vy], dtype=np.float32)
+            norma_d = float(np.linalg.norm(dir_unit))
+            if norma_d < 1e-6:
+                break
+            dir_unit = dir_unit / norma_d
+
+            normal_ext = np.array([-dir_unit[1], dir_unit[0]], dtype=np.float32)
+            ponto_reta = np.array([x0, y0], dtype=np.float32)
+            if float(np.dot(ponto_reta - centro, normal_ext)) < 0:
+                normal_ext = -normal_ext
+            ang_normal = float(np.arctan2(normal_ext[1], normal_ext[0]))
+
+            dist_ref = np.abs(np.dot(restantes_loc - ponto_reta, normal_ext))
+            mascara_refinada = dist_ref <= limiar_inlier
+            qtd_inliers_ref = max(int(max_inliers), int(np.sum(mascara_refinada)))
+
+            lista_retas.append({
+                "reta": reta,
+                "direcao": dir_unit,
+                "normal": normal_ext,
+                "ang_normal": ang_normal,
+                "qtd_inliers": qtd_inliers_ref,
+            })
+            angulos_vistos.append(ang_normal)
+            restantes_loc = restantes_loc[dist_ref > limiar_remocao]
+
+        return lista_retas
+
+    candidatas = extrair_retas_peeling(8, False)
+    quarteto_base_separado = extrair_retas_peeling(4, True)
+
+    if len(candidatas) < 4 and len(quarteto_base_separado) < 4:
+        return _ransac_sequencial_contorno(contorno)
+
+    if mascara is not None and mascara.ndim >= 2:
+        altura_img, largura_img = mascara.shape[:2]
+        mascara_bin = mascara > 0
+        pixels_mascara = int(np.count_nonzero(mascara_bin))
+    else:
+        x_min_c, y_min_c = np.min(pts_contorno, axis=0)
+        x_max_c, y_max_c = np.max(pts_contorno, axis=0)
+        largura_img = int(max(100, x_max_c + abs(x_min_c) + 20))
+        altura_img = int(max(100, y_max_c + abs(y_min_c) + 20))
+        mascara_gerada = np.zeros((altura_img, largura_img), dtype=np.uint8)
+        cv2.drawContours(mascara_gerada, [contorno], -1, 255, -1)
+        mascara_bin = mascara_gerada > 0
+        pixels_mascara = int(np.count_nonzero(mascara_bin))
+
+    if pixels_mascara <= 0:
+        return _ransac_sequencial_contorno(contorno)
+
+    ys_mascara, xs_mascara = np.nonzero(mascara_bin)
+    pts_mascara = np.column_stack((xs_mascara, ys_mascara)).astype(np.float32)
+    if len(pts_mascara) > 8000:
+        passo_amostra = max(1, len(pts_mascara) // 8000)
+        pts_mascara_amostra = pts_mascara[::passo_amostra]
+    else:
+        pts_mascara_amostra = pts_mascara
+    total_amostra_mascara = float(len(pts_mascara_amostra))
+
+    lim_x_min = -0.35 * float(largura_img)
+    lim_x_max = 1.35 * float(largura_img)
+    lim_y_min = -0.35 * float(altura_img)
+    lim_y_max = 1.35 * float(altura_img)
+
+    lista_quartetos = []
+    if len(candidatas) >= 4:
+        lista_quartetos.append(tuple(candidatas[:4]))
+    if len(quarteto_base_separado) == 4:
+        lista_quartetos.append(tuple(quarteto_base_separado))
+    if len(candidatas) >= 4:
+        for comb in itertools.combinations(candidatas, 4):
+            lista_quartetos.append(comb)
+
+    melhor_vertices = None
+    melhor_pontuacao = -1e9
+    mascara_quad_buffer = np.zeros((altura_img, largura_img), dtype=np.uint8)
+
+    for quarteto in lista_quartetos:
+        ordenadas = sorted(quarteto, key=lambda item: item["ang_normal"])
+
+        angulos_validos = True
+        for i in range(4):
+            a1 = ordenadas[i]["ang_normal"]
+            a2 = ordenadas[(i + 1) % 4]["ang_normal"]
+            if np.degrees(_diferenca_angular_orientada_rad(a1, a2)) < 25.0:
+                angulos_validos = False
+                break
+        if not angulos_validos:
+            continue
+
+        cantos = []
+        intersecao_valida = True
+        for i in range(4):
+            inter = _intersecao_retas(
+                ordenadas[i]["reta"], ordenadas[(i + 1) % 4]["reta"]
+            )
+            if inter is None or not np.all(np.isfinite(inter)):
+                intersecao_valida = False
+                break
+            ix, iy = float(inter[0]), float(inter[1])
+            if (
+                ix < lim_x_min
+                or ix > lim_x_max
+                or iy < lim_y_min
+                or iy > lim_y_max
+            ):
+                intersecao_valida = False
+                break
+            cantos.append(inter)
+
+        if not intersecao_valida:
+            continue
+
+        verts = ordenar_vertices(cantos)
+        poly_cv = verts.reshape(-1, 1, 2).astype(np.float32)
+        if not cv2.isContourConvex(poly_cv):
+            continue
+
+        v_lado0 = verts[1] - verts[0]
+        v_lado1 = verts[2] - verts[1]
+        v_lado2 = verts[3] - verts[2]
+        v_lado3 = verts[0] - verts[3]
+
+        if (
+            float(np.linalg.norm(v_lado0)) < 15.0
+            or float(np.linalg.norm(v_lado1)) < 15.0
+            or float(np.linalg.norm(v_lado2)) < 15.0
+            or float(np.linalg.norm(v_lado3)) < 15.0
+        ):
+            continue
+
+        desvio_par_0_2 = _diferenca_angular_graus(v_lado0, v_lado2)
+        desvio_par_1_3 = _diferenca_angular_graus(v_lado1, v_lado3)
+        if desvio_par_0_2 > 42.0 or desvio_par_1_3 > 42.0:
+            continue
+
+        angulos_internos_ok = True
+        for i in range(4):
+            p_ant = verts[(i - 1) % 4]
+            p_atual = verts[i]
+            p_prox = verts[(i + 1) % 4]
+            va = p_ant - p_atual
+            vb = p_prox - p_atual
+            na = float(np.linalg.norm(va))
+            nb = float(np.linalg.norm(vb))
+            cos_int = float(np.clip(np.dot(va, vb) / (na * nb + 1e-6), -1.0, 1.0))
+            ang_int = float(np.degrees(np.arccos(cos_int)))
+            if ang_int < 48.0 or ang_int > 132.0:
+                angulos_internos_ok = False
+                break
+
+        if not angulos_internos_ok:
+            continue
+
+        area_quad = float(cv2.contourArea(poly_cv))
+        razao_area = area_quad / float(pixels_mascara)
+        if razao_area < 0.85 or razao_area > 2.2:
+            continue
+
+        dentro = np.ones(len(pts_mascara_amostra), dtype=bool)
+        for i in range(4):
+            a = verts[i]
+            b = verts[(i + 1) % 4]
+            ab = b - a
+            cruz = (
+                ab[0] * (pts_mascara_amostra[:, 1] - a[1])
+                - ab[1] * (pts_mascara_amostra[:, 0] - a[0])
+            )
+            dentro &= cruz >= -1.0
+
+        cobertura_estimada = (float(np.count_nonzero(dentro)) / total_amostra_mascara) * 100.0
+        if cobertura_estimada < 94.2:
+            continue
+
+        mascara_quad_buffer.fill(0)
+        pts_int = np.round(verts).astype(np.int32).reshape(-1, 1, 2)
+        cv2.fillPoly(mascara_quad_buffer, [pts_int], 255)
+        quad_bin = mascara_quad_buffer > 0
+
+        pixels_intersecao = int(np.count_nonzero(mascara_bin & quad_bin))
+        cobertura_real = (float(pixels_intersecao) / float(pixels_mascara)) * 100.0
+        if cobertura_real < 95.0:
+            continue
+
+        pixels_uniao = int(np.count_nonzero(mascara_bin | quad_bin))
+        if pixels_uniao <= 0:
+            continue
+        iou_quad = float(pixels_intersecao) / float(pixels_uniao)
+
+        soma_inliers = sum(item["qtd_inliers"] for item in quarteto)
+        soma_inliers_normalizada = float(soma_inliers) / float(total_pontos)
+
+        desvio_opostos_medio = 0.5 * (desvio_par_0_2 + desvio_par_1_3)
+        consistencia_angular = max(0.0, 1.0 - (desvio_opostos_medio / 45.0))
+
+        pontuacao = (
+            0.50 * iou_quad
+            + 0.35 * soma_inliers_normalizada
+            + 0.15 * consistencia_angular
+        )
+
+        if pontuacao > melhor_pontuacao:
+            melhor_pontuacao = pontuacao
+            melhor_vertices = verts
+
+    if melhor_vertices is None:
+        return _ransac_sequencial_contorno(contorno)
+
+    return melhor_vertices
+
+
+def extrair_vertices_contorno(contorno, mascara=None):
+    """
+    Extrai os 4 vértices ordenados do tabuleiro utilizando o método
+    RANSAC Peeling Projetivo (Top-K + Quarteto).
+    """
+    return ransac_peeling_projetivo(contorno, mascara=mascara)
 
 
 def _calcular_centroide_mascara(mascara_binaria, caixa):
@@ -370,7 +877,9 @@ def detectar_candidatos_tabuleiro(
 
     reino_principal = candidatos[0]
     reino_principal["rotulo"] = "reino_principal"
-    reino_principal["vertices"] = extrair_vertices_contorno(reino_principal["contorno"])
+    reino_principal["vertices"] = extrair_vertices_contorno(
+        reino_principal["contorno"], mascara=reino_principal["mascara"]
+    )
 
     reinos_ignorados = candidatos[1:]
     return reino_principal, reinos_ignorados
@@ -988,7 +1497,9 @@ def processar_imagem_automatica(
 
     # Etapa 1: recalcula vértices se etapa_minima == 1 (cache) ou veio da Etapa 0
     if etapa_minima == 1 and usou_cache:
-        principal["vertices"] = extrair_vertices_contorno(principal["contorno"])
+        principal["vertices"] = extrair_vertices_contorno(
+            principal["contorno"], mascara=principal.get("mascara")
+        )
         _salvar_cache_geometria(pasta_base_intermediarias, prefixo, principal)
 
     vertices = principal["vertices"]

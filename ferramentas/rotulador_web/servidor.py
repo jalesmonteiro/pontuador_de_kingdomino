@@ -845,7 +845,7 @@ def _gerar_diagnostico_etapa2(bytes_img):
 
     return {
         "quantidade_pontos_contorno": int(len(contorno)),
-        "metodo_ajuste_cantos": "simplificar_para_quadrilatero_busca_binaria + ransac_bordas_contorno_real_trava_15_graus_huber",
+        "metodo_ajuste_cantos": "ransac_peeling_projetivo",
         "vertices_4_cantos": [
             [round(float(pt[0]), 2), round(float(pt[1]), 2)] for pt in vertices
         ],

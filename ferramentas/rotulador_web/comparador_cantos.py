@@ -10,6 +10,7 @@ from src.geometria import (
     desenhar_cantos_detectados,
     detectar_candidatos_tabuleiro,
     extrair_vertices_contorno,
+    extrair_vertices_contorno_quad_base_huber,
     ordenar_vertices,
     simplificar_para_quadrilatero,
 )
@@ -167,7 +168,7 @@ def _ordenar_retas_ao_redor_do_centro(retas, centro):
 
 
 def atual_ransac_huber(contorno, mascara=None):
-    return ordenar_vertices(extrair_vertices_contorno(contorno))
+    return ordenar_vertices(extrair_vertices_contorno_quad_base_huber(contorno))
 
 
 def hull_busca_binaria(contorno, mascara=None):
