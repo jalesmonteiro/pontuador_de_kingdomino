@@ -1173,6 +1173,48 @@ def exportar_diagnostico_etapa4(dados=Body(...)):
     )
 
 
+def _gerar_diagnostico_completo(bytes_img):
+    etapa1 = _gerar_diagnostico_etapa1(bytes_img)
+    etapa2 = _gerar_diagnostico_etapa2(bytes_img)
+    etapa3 = _gerar_diagnostico_etapa3(bytes_img)
+    etapa4 = _gerar_diagnostico_etapa4(bytes_img)
+
+    return {
+        "etapa_1_detector": etapa1,
+        "etapa_2_homografia": etapa2,
+        "etapa_3_grade": etapa3,
+        "etapa_4_classificador": etapa4,
+    }
+
+
+@app.post("/api/diagnostico-completo")
+def exportar_diagnostico_completo(dados=Body(...)):
+    imagem_b64 = str(dados.get("imagem_base64", "")).strip()
+    if not imagem_b64:
+        raise HTTPException(
+            status_code=400,
+            detail="Nenhuma imagem enviada para diagnóstico completo.",
+        )
+
+    if "," in imagem_b64:
+        imagem_b64 = imagem_b64.split(",", 1)[1]
+
+    try:
+        bytes_img = base64.b64decode(imagem_b64)
+        diagnostico = _gerar_diagnostico_completo(bytes_img)
+    except Exception as erro:
+        raise HTTPException(status_code=422, detail=str(erro))
+
+    conteudo_json = json.dumps(diagnostico, ensure_ascii=False, indent=2)
+    return Response(
+        content=conteudo_json,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="diagnostico_completo_python.json"'
+        },
+    )
+
+
 @app.get("/api/comparar-cantos/imagens")
 def obter_imagens_e_metodos_cantos():
     imagens = listar_imagens_cantos(PASTA_CANTOS)

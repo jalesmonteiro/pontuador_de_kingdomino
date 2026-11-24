@@ -14,6 +14,7 @@ if raiz_projeto not in sys.path:
     sys.path.insert(0, raiz_projeto)
 
 from ferramentas.rotulador_web.servidor import (
+    _gerar_diagnostico_completo,
     _gerar_diagnostico_etapa1,
     _gerar_diagnostico_etapa2,
     _gerar_diagnostico_etapa3,
@@ -217,6 +218,23 @@ class AplicativoAvaliadorKingdomino:
         )
         self.botao_salvar_json4.pack(side=tk.LEFT, padx=(0, 8))
 
+        self.botao_salvar_json_completo = tk.Button(
+            barra_exportacao,
+            text="💾 Log Completo (Etapas 1–4)",
+            command=self.salvar_json_diagnostico_completo,
+            bg="#2563eb",
+            fg="#ffffff",
+            activebackground="#1d4ed8",
+            activeforeground="#ffffff",
+            font=("Segoe UI", 9, "bold"),
+            padx=12,
+            pady=5,
+            relief=tk.FLAT,
+            cursor="hand2",
+            state=tk.DISABLED,
+        )
+        self.botao_salvar_json_completo.pack(side=tk.LEFT, padx=(0, 8))
+
         # Área Central: Sequência de Etapas (topo) + Destaque e Relatório (baixo)
         corpo = tk.Frame(self.janela, bg="#0f172a", padx=14, pady=10)
         corpo.pack(fill=tk.BOTH, expand=True)
@@ -378,6 +396,7 @@ class AplicativoAvaliadorKingdomino:
         self.botao_salvar_json2.configure(state=tk.NORMAL)
         self.botao_salvar_json3.configure(state=tk.NORMAL)
         self.botao_salvar_json4.configure(state=tk.NORMAL)
+        self.botao_salvar_json_completo.configure(state=tk.NORMAL)
         self.resultado_atual = saida
         self.referencias_imagens.clear()
 
@@ -474,6 +493,13 @@ class AplicativoAvaliadorKingdomino:
             _gerar_diagnostico_etapa4,
             "Salvar JSON Etapa 4 (Classificador)",
             "diagnostico_etapa4_python.json",
+        )
+
+    def salvar_json_diagnostico_completo(self):
+        self._salvar_json_diagnostico(
+            _gerar_diagnostico_completo,
+            "Salvar JSON Completo (Etapas 1 a 4)",
+            "diagnostico_completo_python.json",
         )
 
     def _salvar_json_diagnostico(self, gerador_fn, titulo_dialogo, nome_padrao):

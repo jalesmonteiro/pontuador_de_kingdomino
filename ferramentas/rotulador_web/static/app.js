@@ -1116,6 +1116,7 @@ async function enviarImagemParaAvaliacao(imagemBase64, nomeArquivo = "foto") {
     document.getElementById("botao-baixar-diagnostico-etapa2").disabled = false;
     document.getElementById("botao-baixar-diagnostico-etapa3").disabled = false;
     document.getElementById("botao-baixar-diagnostico-etapa4").disabled = false;
+    document.getElementById("botao-baixar-diagnostico-completo").disabled = false;
     selecionarEtapaDestaqueWeb(1);
 
     statusEl.textContent =
@@ -1891,6 +1892,16 @@ document.addEventListener("DOMContentLoaded", () => {
         "/api/diagnostico-etapa4",
         "diagnostico_etapa4_python.json",
         "botao-baixar-diagnostico-etapa4"
+      )
+    );
+
+  document
+    .getElementById("botao-baixar-diagnostico-completo")
+    .addEventListener("click", () =>
+      baixarDiagnosticoEtapa(
+        "/api/diagnostico-completo",
+        "diagnostico_completo_python.json",
+        "botao-baixar-diagnostico-completo"
       )
     );
 
